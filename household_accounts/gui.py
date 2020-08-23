@@ -132,8 +132,8 @@ class ItemFrame():
         medium_category['values'] = self.medium_category_list
         medium_category.grid(row=row, column=3)
 
-        self.CheckVar = tk.IntVar(value=read_reduced_tax_rate)
-        reduced_tax_rate = ttk.Checkbutton(self.frame, variable=self.CheckVar)
+        CheckVar = tk.IntVar(value=read_reduced_tax_rate)
+        reduced_tax_rate = ttk.Checkbutton(self.frame, variable=CheckVar)
         reduced_tax_rate.grid(row=row, column=4)
 
         extra_cost = tk.Entry(self.frame, width=5)
@@ -144,8 +144,7 @@ class ItemFrame():
         extra_cost_detail.insert(tk.END, '')
         extra_cost_detail.grid(row=row, column=6)
 
-        self.CheckVar = tk.IntVar(value=0)  # デフォルトオフ
-        special_cost = ttk.Checkbutton(self.frame, variable=self.CheckVar)
+        special_cost = ttk.Checkbutton(self.frame)
         special_cost.grid(row=row, column=7)
     
 
