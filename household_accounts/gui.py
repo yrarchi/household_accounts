@@ -39,10 +39,10 @@ class ReceiptInfoFrame():
     column_list = ['日付', '店舗', '内税/外税']
     shop_list = ['店舗', 'コンビニ']  # あとでDBから引っ張るようにする
 
-    def __init__(self, frame, read_date):
-        self.show_info(frame, read_date)
+    def __init__(self, frame, read_date, tax_excluded):
+        self.show_info(frame, read_date, tax_excluded)
 
-    def show_info(self, frame, read_date):
+    def show_info(self, frame, read_date, tax_excluded):
         for column, text in enumerate(self.column_list):
             date_label = tk.Label(frame, text=text)
             date_label.grid(row=0, column=column)
@@ -55,8 +55,10 @@ class ReceiptInfoFrame():
         shop['values'] = self.shop_list
         shop.grid(row=1, column=1)
 
-        tax_in = tk.Radiobutton(frame, text='内税', value='in')
-        tax_ex = tk.Radiobutton(frame, text='外税', value='ex')
+        tax_var = tk.IntVar()
+        tax_var.set(tax_excluded)
+        tax_in = ttk.Radiobutton(frame, text='内税', value=0, variable=tax_var)
+        tax_ex = ttk.Radiobutton(frame, text='外税', value=1, variable=tax_var)
         tax_in.grid(row=1, column=2)
         tax_ex.grid(row=1, column=3)
 
@@ -153,9 +155,9 @@ class ItemFrame():
             self.show_item_value(row+1, item, price, redued_tax_rate)
 
 
-def main(read_date, read_item, read_price, read_reduced_tax_rate, input_file):
+def main(read_date, read_item, read_price, read_reduced_tax_rate, tax_excluded, input_file):
     gui = MakeGUI()
-    receipt_info_frame = ReceiptInfoFrame(gui.receipt_info_frame, read_date)
+    receipt_info_frame = ReceiptInfoFrame(gui.receipt_info_frame, read_date, tax_excluded)
     img_frame = ImgFrame(gui.img_frame, gui.img_width, gui.height, input_file)
     item_frame = ItemFrame(gui.item_frame, read_item, read_price, read_reduced_tax_rate)
     gui.mainloop()
