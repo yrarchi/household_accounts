@@ -40,7 +40,7 @@ class ReceiptInfoFrame():
     shop_list = ['店舗', 'コンビニ']  # あとでDBから引っ張るようにする
 
     def __init__(self, frame, read_date, tax_excluded):
-        self.show_info(frame, read_date, tax_excluded)
+        self.tax_var = self.show_info(frame, read_date, tax_excluded)
 
     def show_info(self, frame, read_date, tax_excluded):
         for column, text in enumerate(self.column_list):
@@ -61,6 +61,8 @@ class ReceiptInfoFrame():
         tax_ex = ttk.Radiobutton(frame, text='外税', value=1, variable=tax_var)
         tax_in.grid(row=1, column=2)
         tax_ex.grid(row=1, column=3)
+
+        return tax_var
 
 
 class ImgFrame():
@@ -108,92 +110,132 @@ class ItemFrame():
     reduced_tax_rate = 1.08
 
         
-    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded):
+    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place):
+        self.num_item = len(read_price)
         self.frame = frame
         self.show_item_column()
-        self.show_item_value(read_item, read_price, read_reduced_tax_rate_flg)
-        self.show_item_price_tax_in(read_price, read_reduced_tax_rate_flg, tax_excluded)
+        self.item_place, self.price_place, self.reduced_tax_rate_place = self.get_item_value_list(read_item, read_price, read_reduced_tax_rate_flg)
+        self.show_price_tax_in(read_price, read_reduced_tax_rate_flg, read_tax_excluded)
+        self.show_button_recalculation(self.price_place, self.reduced_tax_rate_place, tax_place)
 
 
     def show_item_column(self):
         for column, text in enumerate(self.column_list):
             date_label = tk.Label(self.frame, text=text)
             date_label.grid(row=0, column=column)
-    
-
-    def show_item_value(self, read_item, read_price, read_reduced_tax_rate_flg):
-        for row, (item, price, reduced_tax_rate_flg) in enumerate(zip(read_item, read_price, read_reduced_tax_rate_flg)):
-            row = row + 1
-
-            item_box = tk.Entry(self.frame, width=25)
-            item_box.insert(tk.END, item)
-            item_box.grid(row=row, column=0)
-
-            price_box = tk.Entry(self.frame, width=5)
-            price_box.insert(tk.END, price)
-            price_box.grid(row=row, column=1)
-
-            CheckVar = tk.IntVar(value=reduced_tax_rate_flg)
-            reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=CheckVar)
-            reduced_tax_rate_flg.grid(row=row, column=2)
-
-            major_category = ttk.Combobox(self.frame, width=12)
-            major_category['values'] = self.major_category_list
-            major_category.grid(row=row, column=4)
-
-            medium_category = ttk.Combobox(self.frame, width=12)
-            medium_category['values'] = self.medium_category_list
-            medium_category.grid(row=row, column=5)
-
-            extra_cost = tk.Entry(self.frame, width=5)
-            extra_cost.insert(tk.END, '')
-            extra_cost.grid(row=row, column=6)
-
-            extra_cost_detail = tk.Entry(self.frame, width=7)
-            extra_cost_detail.insert(tk.END, '')
-            extra_cost_detail.grid(row=row, column=7)
-
-            special_cost = ttk.Checkbutton(self.frame)
-            special_cost.grid(row=row, column=8)
 
 
-    def show_item_price_tax_in(self, read_price, read_reduced_tax_rate_flg, tax_excluded):
-        price_list = []
-        for price in read_price:
-            try:
-                price = int(price)
-            except ValueError:  # 金額を数値として読み取れていない（アルファベット等として認識）場合はいったん0円とする
-                price = 0
-            price_list.append(price)
+    def show_item_value(self, item, price, reduced_tax_rate_flg, row):
+        row = row + 1
 
-        price_tax_in_list = []
-        if tax_excluded:
-            for row, (price, reduced_tax_rate_flg) in enumerate(zip(price_list, read_reduced_tax_rate_flg)):
-                row = row + 1
-                tax = self.reduced_tax_rate if reduced_tax_rate_flg else self.tax_rate
-                price_tax_in_list.append(int(price * tax))  # 税込にして端数が出た場合は切り捨てとして扱う
-        else:
-            price_tax_in_list = price_list
+        item_box = tk.Entry(self.frame, width=25)
+        item_box.insert(tk.END, item)
+        item_box.grid(row=row, column=0)
 
-        for row, price_tax_in in enumerate(price_tax_in_list):
-            row = row + 1
-            price_label = tk.Label(self.frame, text=price_tax_in)
-            price_label.grid(row=row, column=3)
+        price_box = tk.Entry(self.frame, width=5, justify=tk.RIGHT)
+        price_box.insert(tk.END, price)
+        price_box.grid(row=row, column=1)
+
+        reduced_tax_rate_flg_var = tk.IntVar(value=reduced_tax_rate_flg)
+        reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=reduced_tax_rate_flg_var)
+        reduced_tax_rate_flg.grid(row=row, column=2)
+
+        major_category = ttk.Combobox(self.frame, width=12)
+        major_category['values'] = self.major_category_list
+        major_category.grid(row=row, column=4)
+
+        medium_category = ttk.Combobox(self.frame, width=12)
+        medium_category['values'] = self.medium_category_list
+        medium_category.grid(row=row, column=5)
+
+        extra_cost = tk.Entry(self.frame, width=5)
+        extra_cost.insert(tk.END, '')
+        extra_cost.grid(row=row, column=6)
+
+        extra_cost_detail = tk.Entry(self.frame, width=7)
+        extra_cost_detail.insert(tk.END, '')
+        extra_cost_detail.grid(row=row, column=7)
+
+        special_cost = ttk.Checkbutton(self.frame)
+        special_cost.grid(row=row, column=8)
+
+        return item_box, price_box, reduced_tax_rate_flg_var
+
+
+    def get_item_value_list(self, item_list, price_list, reduced_tax_rate_flg_list):
+        item_place = []
+        price_place = []
+        reduced_tax_rate_place = []
+        for row, (item, price, reduced_tax_rate_flg) in enumerate(zip(item_list, price_list, reduced_tax_rate_flg_list)):
+            item_box, price_box, reduced_tax_rate_flg = self.show_item_value(item, price, reduced_tax_rate_flg, row)
+            item_place.append(item_box)
+            price_place.append(price_box)
+            reduced_tax_rate_place.append(reduced_tax_rate_flg)
+        return item_place, price_place, reduced_tax_rate_place
+
+
+    def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):
+        def calc_price_tax_in():
+            trans_price_list = []
+            for price in price_list:
+                try:
+                    price = int(price)
+                except ValueError:  # 金額を数値として読み取れていない（アルファベット等として認識）場合はいったん0円とする
+                    price = 0
+                trans_price_list.append(price)
+
+            price_tax_in_list = []
+            if tax_excluded_list:
+                for row, (price, reduced_tax_rate_flg) in enumerate(zip(trans_price_list, reduced_tax_rate_flg_list)):
+                    row = row + 1
+                    tax = self.reduced_tax_rate if reduced_tax_rate_flg else self.tax_rate
+                    price_tax_in_list.append(int(price * tax))  # 税込にして端数が出た場合は切り捨てとして扱う
+            else:
+                price_tax_in_list = trans_price_list
+            return price_tax_in_list
+
         
-        blank_row_label = tk.Label(self.frame)
-        blank_row_label.grid(row=len(read_price)+2,column=3)
-        sum_price_str_labal = tk.Label(self.frame, text='税込価格合計')
-        sum_price_str_labal.grid(row=len(read_price)+3,column=1, columnspan=2)
-        sum_price = sum(price_tax_in_list)
-        price_sum_labal = tk.Label(self.frame, text=sum_price)
-        price_sum_labal.grid(row=len(read_price)+3,column=3)
+        def show_item_prices_tax_in(price_tax_in_list):
+            for row, price_tax_in in enumerate(price_tax_in_list):
+                row = row + 1
+                price_label = tk.Label(self.frame, text=price_tax_in, justify=tk.RIGHT)
+                price_label.grid(row=row, column=3, sticky=tk.E, ipadx=20)
+            
+
+        def show_sum_price_tax_in(price_tax_in_list):
+            blank_row_label = tk.Label(self.frame)
+            blank_row_label.grid(row=self.num_item+2,column=3)
+
+            sum_price_str_labal = tk.Label(self.frame, text='税込価格合計')
+            sum_price_str_labal.grid(row=self.num_item+3,column=1, columnspan=2, sticky=tk.E)
+            
+            sum_price = sum(price_tax_in_list)
+            price_sum_labal = tk.Label(self.frame, text=sum_price)
+            price_sum_labal.grid(row=self.num_item+3,column=3, sticky=tk.E, ipadx=20)
+
+
+        price_tax_in_list = calc_price_tax_in()
+        show_item_prices_tax_in(price_tax_in_list)
+        show_sum_price_tax_in(price_tax_in_list)
+
+
+    def show_button_recalculation(self, price_place, reduced_tax_rate_place, tax_place):
+        def recalc():
+            price = list(map(lambda x: x.get(), price_place))
+            reduced_tax_rate_flg = list(map(lambda x: x.get(), reduced_tax_rate_place))
+            tax_excluded = tax_place.get()
+            self.show_price_tax_in(price, reduced_tax_rate_flg, tax_excluded)
+        
+        calc_button = ttk.Button(self.frame, text='再計算', command=recalc)
+        calc_button.grid(row=self.num_item+4, column=3, sticky=tk.E)
 
 
 def main(read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, input_file):
     gui = MakeGUI()
     receipt_info_frame = ReceiptInfoFrame(gui.receipt_info_frame, read_date, tax_excluded)
+    tax_place = receipt_info_frame.tax_var
     img_frame = ImgFrame(gui.img_frame, gui.img_width, gui.height, input_file)
-    item_frame = ItemFrame(gui.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded)
+    item_frame = ItemFrame(gui.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place)
     gui.mainloop()
 
 
