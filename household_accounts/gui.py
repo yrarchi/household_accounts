@@ -1,6 +1,7 @@
 import datetime
 import csv
 from PIL import Image
+import re
 import tkinter as tk
 import tkinter.ttk as ttk
 
@@ -26,7 +27,6 @@ class MakeGUI(tk.Tk):
 
 
     def divide_screen(self):
-        
         receipt_img_frame = tk.Frame(self, width=self.img_width, height=self.height)
         receipt_img_frame.grid(row=0, column=0, rowspan=3, sticky=(tk.N, tk.S))
 
@@ -117,11 +117,13 @@ class ItemFrame():
     reduced_tax_rate = 1.08
 
         
-    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place):
+    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place, gui):
         self.num_item = len(read_price)
         self.frame = frame
+        self.gui = gui
         self.show_item_column()
-        self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place = self.get_item_value_list(read_item, read_price, read_reduced_tax_rate_flg)
+        self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place \
+            = self.get_item_value_list(read_item, read_price, read_reduced_tax_rate_flg)
         self.show_price_tax_in(read_price, read_reduced_tax_rate_flg, read_tax_excluded)
         self.show_button_recalculation(self.price_place, self.reduced_tax_rate_place, tax_place)
 
@@ -133,15 +135,37 @@ class ItemFrame():
 
 
     def show_item_value(self, item, price, reduced_tax_rate_flg, row):
+        def validate_price(value):
+            try:
+                int(value) is int
+            except ValueError:
+                validate_result = False
+            else:
+                validate_result = True
+                price_box['bg'] = 'black'
+            return validate_result
+
+
+        def invalid_price():
+            price_box['bg'] = 'tomato'
+
+
         row = row + 1
 
         item_box = tk.Entry(self.frame, width=25)
         item_box.insert(tk.END, item)
         item_box.grid(row=row, column=0)
 
+        validate_cmd = self.gui.register(validate_price)
+        invalid_cmd = self.gui.register(invalid_price)
         price_box = tk.Entry(self.frame, width=5, justify=tk.RIGHT)
-        price_box.insert(tk.END, price)
         price_box.grid(row=row, column=1)
+        price_box.insert(tk.END, price)  # バリデーション前に入力して初期値についてもチェックする
+        price_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
+        price_box['validatecommand'] = (validate_cmd, '%s')  # %s : 入力されている値
+        price_box['validate'] = 'focus'
+        price_box['invalidcommand'] = (invalid_cmd)
+        
 
         reduced_tax_rate_flg_var = tk.IntVar(value=reduced_tax_rate_flg)
         reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=reduced_tax_rate_flg_var)
@@ -273,7 +297,7 @@ def main(read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_exclud
     receipt_info_frame = ReceiptInfoFrame(gui.receipt_info_frame, read_date, tax_excluded)
     date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
     img_frame = ImgFrame(gui.img_frame, gui.img_width, gui.height, input_file)
-    item_frame = ItemFrame(gui.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place)
+    item_frame = ItemFrame(gui.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, gui)
 
     item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place \
         = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place
