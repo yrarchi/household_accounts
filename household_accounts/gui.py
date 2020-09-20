@@ -1,3 +1,5 @@
+import datetime
+import csv
 from PIL import Image
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -5,16 +7,17 @@ import tkinter.ttk as ttk
 
 class MakeGUI(tk.Tk):
     width = 1400
-    height = 600
     img_width = 300
-    info_height = 100
     info_width = width - img_width
-    item_height = height - info_height
+    height = 600
+    info_height = 60
+    operation_height = 100
+    item_height = height - info_height - operation_height
 
     def __init__(self):
         super().__init__()
         self.make_screen()
-        self.img_frame, self.receipt_info_frame, self.item_frame = self.divide_screen()
+        self.img_frame, self.receipt_info_frame, self.item_frame, self.operation_frame = self.divide_screen()
 
 
     def make_screen(self):
@@ -23,8 +26,9 @@ class MakeGUI(tk.Tk):
 
 
     def divide_screen(self):
+        
         receipt_img_frame = tk.Frame(self, width=self.img_width, height=self.height)
-        receipt_img_frame.grid(row=0, column=0, rowspan=2, sticky=(tk.N, tk.S))
+        receipt_img_frame.grid(row=0, column=0, rowspan=3, sticky=(tk.N, tk.S))
 
         receipt_info_frame = tk.Frame(self, width=self.info_width, height=self.info_height)
         receipt_info_frame.grid(row=0, column=1)
@@ -32,7 +36,10 @@ class MakeGUI(tk.Tk):
         item_frame = tk.Frame(self, width=self.info_width, height=self.item_height)
         item_frame.grid(row=1, column=1)
 
-        return receipt_img_frame, receipt_info_frame, item_frame
+        operation_frame = tk.Frame(self, width=self.info_width, height=self.operation_height)
+        operation_frame.grid(row=2, column=1)
+
+        return receipt_img_frame, receipt_info_frame, item_frame, operation_frame
 
 
 class ReceiptInfoFrame():
@@ -40,7 +47,7 @@ class ReceiptInfoFrame():
     shop_list = ['店舗', 'コンビニ']  # あとでDBから引っ張るようにする
 
     def __init__(self, frame, read_date, tax_excluded):
-        self.tax_var = self.show_info(frame, read_date, tax_excluded)
+        self.date_box, self.shop, self.tax_var = self.show_info(frame, read_date, tax_excluded)
 
     def show_info(self, frame, read_date, tax_excluded):
         for column, text in enumerate(self.column_list):
@@ -62,7 +69,7 @@ class ReceiptInfoFrame():
         tax_in.grid(row=1, column=2)
         tax_ex.grid(row=1, column=3)
 
-        return tax_var
+        return date_box, shop, tax_var
 
 
 class ImgFrame():
@@ -114,7 +121,7 @@ class ItemFrame():
         self.num_item = len(read_price)
         self.frame = frame
         self.show_item_column()
-        self.item_place, self.price_place, self.reduced_tax_rate_place = self.get_item_value_list(read_item, read_price, read_reduced_tax_rate_flg)
+        self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place = self.get_item_value_list(read_item, read_price, read_reduced_tax_rate_flg)
         self.show_price_tax_in(read_price, read_reduced_tax_rate_flg, read_tax_excluded)
         self.show_button_recalculation(self.price_place, self.reduced_tax_rate_place, tax_place)
 
@@ -159,19 +166,24 @@ class ItemFrame():
         special_cost = ttk.Checkbutton(self.frame)
         special_cost.grid(row=row, column=8)
 
-        return item_box, price_box, reduced_tax_rate_flg_var
+        return item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category
 
 
     def get_item_value_list(self, item_list, price_list, reduced_tax_rate_flg_list):
         item_place = []
         price_place = []
         reduced_tax_rate_place = []
+        major_category_place = []
+        medium_category_place = []
         for row, (item, price, reduced_tax_rate_flg) in enumerate(zip(item_list, price_list, reduced_tax_rate_flg_list)):
-            item_box, price_box, reduced_tax_rate_flg = self.show_item_value(item, price, reduced_tax_rate_flg, row)
+            item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category \
+                = self.show_item_value(item, price, reduced_tax_rate_flg, row)
             item_place.append(item_box)
             price_place.append(price_box)
-            reduced_tax_rate_place.append(reduced_tax_rate_flg)
-        return item_place, price_place, reduced_tax_rate_place
+            reduced_tax_rate_place.append(reduced_tax_rate_flg_var)
+            major_category_place.append(major_category)
+            medium_category_place.append(medium_category)
+        return item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place
 
 
     def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):
@@ -230,12 +242,43 @@ class ItemFrame():
         calc_button.grid(row=self.num_item+4, column=3, sticky=tk.E)
 
 
+class OperationFrame():
+    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place):
+        self.frame = frame
+        self.date_place = date_place
+        self.shop_place = shop_place
+        self.item_place = item_place
+        self.price_place = price_place
+        self.major_category_place = major_category_place
+        self.medium_category_place = medium_category_place
+        self.show_button_write_csv()
+
+
+    def show_button_write_csv(self):
+        def write_csv():
+            date = self.date_place.get()
+            shop = self.shop_place.get()
+            today = datetime.datetime.now().strftime('%Y%m%d')
+            with open('./csv/{}.csv'.format(today), mode='a') as file:
+                for item, price, major_category, medium_category in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place):
+                    row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop]
+                    csv.writer(file).writerow(row)
+        
+        write_csv_button = ttk.Button(self.frame, text='csvファイルに書き込み', command=write_csv)
+        write_csv_button.grid(row=0, column=0)
+
+
 def main(read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, input_file):
     gui = MakeGUI()
     receipt_info_frame = ReceiptInfoFrame(gui.receipt_info_frame, read_date, tax_excluded)
-    tax_place = receipt_info_frame.tax_var
+    date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
     img_frame = ImgFrame(gui.img_frame, gui.img_width, gui.height, input_file)
     item_frame = ItemFrame(gui.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place)
+
+    item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place \
+        = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place
+    operation_frame = OperationFrame(gui.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place)
+
     gui.mainloop()
 
 
