@@ -46,26 +46,52 @@ class ReceiptInfoFrame():
     column_list = ['日付', '店舗', '内税/外税']
     shop_list = ['店舗', 'コンビニ']  # あとでDBから引っ張るようにする
 
-    def __init__(self, frame, read_date, tax_excluded):
-        self.date_box, self.shop, self.tax_var = self.show_info(frame, read_date, tax_excluded)
+    def __init__(self, frame, read_date, tax_excluded, gui):
+        self.frame = frame
+        self.gui = gui
+        self.show_info_column()
+        self.date_box, self.shop, self.tax_var = self.show_info_value(read_date, tax_excluded)
 
-    def show_info(self, frame, read_date, tax_excluded):
+
+    def show_info_column(self):
         for column, text in enumerate(self.column_list):
-            date_label = tk.Label(frame, text=text)
+            date_label = tk.Label(self.frame, text=text)
             date_label.grid(row=0, column=column)
 
-        date_box = tk.Entry(frame)
-        date_box.insert(tk.END, read_date)
-        date_box.grid(row=1, column=0)
 
-        shop = ttk.Combobox(frame)
+    def show_info_value(self, read_date, tax_excluded):
+        def validate_date(value):
+            if re.fullmatch(r'[0-9]{4}/[0-9]{2}/[0-9]{2}', value):
+                validate_result = True
+                date_box['bg'] = 'black'
+            else:
+                validate_result = False
+            return validate_result
+
+
+        def invalid_date():
+            date_box['bg'] = 'tomato'
+
+
+        validate_cmd = self.gui.register(validate_date)
+        invalid_cmd = self.gui.register(invalid_date)
+        date_box = tk.Entry(self.frame)
+        date_box.grid(row=1, column=0)
+        date_box.insert(tk.END, read_date)  # バリデーション前に入力して初期値についてもチェックする
+        date_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
+        date_box['validatecommand'] = (validate_cmd, '%s')  # %s : 入力されている値
+        date_box['validate'] = 'focus'
+        date_box['invalidcommand'] = (invalid_cmd)
+
+
+        shop = ttk.Combobox(self.frame)
         shop['values'] = self.shop_list
         shop.grid(row=1, column=1)
 
         tax_var = tk.IntVar()
         tax_var.set(tax_excluded)
-        tax_in = ttk.Radiobutton(frame, text='内税', value=0, variable=tax_var)
-        tax_ex = ttk.Radiobutton(frame, text='外税', value=1, variable=tax_var)
+        tax_in = ttk.Radiobutton(self.frame, text='内税', value=0, variable=tax_var)
+        tax_ex = ttk.Radiobutton(self.frame, text='外税', value=1, variable=tax_var)
         tax_in.grid(row=1, column=2)
         tax_ex.grid(row=1, column=3)
 
@@ -294,7 +320,7 @@ class OperationFrame():
 
 def main(read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, input_file):
     gui = MakeGUI()
-    receipt_info_frame = ReceiptInfoFrame(gui.receipt_info_frame, read_date, tax_excluded)
+    receipt_info_frame = ReceiptInfoFrame(gui.receipt_info_frame, read_date, tax_excluded, gui)
     date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
     img_frame = ImgFrame(gui.img_frame, gui.img_width, gui.height, input_file)
     item_frame = ItemFrame(gui.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, gui)
