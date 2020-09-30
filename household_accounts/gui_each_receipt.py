@@ -1,9 +1,10 @@
 import datetime
 import csv
-from PIL import Image
 import re
 import tkinter as tk
 import tkinter.ttk as ttk
+from PIL import Image
+from resize_image import resize_img
 
 
 class DivideScreen():
@@ -17,8 +18,6 @@ class DivideScreen():
 
     def __init__(self, page2):
         self.page2 = page2
-        #super().__init__()
-        #self.make_screen()
         self.img_frame, self.receipt_info_frame, self.item_frame, self.operation_frame = self.divide_screen()
 
 
@@ -102,32 +101,12 @@ class ImgFrame():
         self.show_img(frame, input_file)
 
 
-    def convert_jpg_to_png(self, input_file, img):
-        png_input_file = input_file[:-4] + '.png'
-        img.save(png_input_file)
-        return png_input_file
-
-
-    def resize_img(self, input_file, img):
-        img_width, img_height = img.size
-        rate_width = img_width / self.width
-        rate_height = img_height / self.height
-        if abs(rate_width-1) >= abs(rate_height-1):
-            resize_img = img.resize((self.width, int(img_height/rate_width)))
-        else:
-            resize_img = img.resize((int(img_width/rate_height), self.height))
-        resize_input_file = input_file[:-4] + '_resize' + '.png'
-        resize_img.save(resize_input_file)
-        return resize_input_file
-
-
     def show_img(self, frame, input_file):
         global img
         canvas = tk.Canvas(frame, bg='black', width = self.width, height = self.height)
         img = Image.open(input_file)
-        if input_file[-4:] != '.png':
-            input_file = self.convert_jpg_to_png(input_file, img)
-        resize_input_file = self.resize_img(input_file, img)
+        resize_input_file = resize_img(input_file, self.width, self.height)
+
         img = tk.PhotoImage(file = resize_input_file)
         canvas.create_image(0, 0, anchor='nw', image=img)
         canvas.pack(expand = True, fill = tk.BOTH)
@@ -327,8 +306,6 @@ def main(read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_exclud
     item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place \
         = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place
     operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place)
-
-    #page2.mainloop()
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+import os
 from PIL import Image
 
 
@@ -12,6 +13,7 @@ def resize_img(file_path, resize_width, resize_height):
     else:
         resize_img = img.resize((int(img_width/rate_height), resize_height))
 
-    resize_file_path = file_path[:-4] + '_resize' + '.png'
+    _, extension = os.path.splitext(file_path)
+    resize_file_path = file_path[:-4] + '_resize' + extension
     resize_img.save(resize_file_path)
     return resize_file_path

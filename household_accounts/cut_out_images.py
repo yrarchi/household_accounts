@@ -3,18 +3,7 @@ import numpy as np
 import os
 import re
 import sys
-
-
-def get_input_path_list():
-    file_path = os.path.dirname(__file__)
-    input_relative_path = '../img/unprocessed'  # このファイルからレシート画像のディレクトリへの相対パス
-    input_filename_list = os.listdir(os.path.join(file_path, input_relative_path))
-    input_filename_jpg_list = [f for f in input_filename_list if re.search(r'\.(JPG|jpg)$', f)]
-    if len(input_filename_jpg_list) == 0:
-        sys.exit("jpgファイルがないため処理を終了します")
-    
-    input_path_list = list(map(lambda x: os.path.join(file_path, input_relative_path, x), input_filename_jpg_list))
-    return input_path_list
+from get_file_path_list import get_input_path_list
 
 
 class GetReceiptContours():
@@ -97,7 +86,7 @@ class GetEachReceiptImg(GetReceiptContours):
 
 
 def main():
-    input_path_list = get_input_path_list()
+    input_path_list = get_input_path_list(relative_path='../img/unprocessed', extension='jpg')
     input_path = input_path_list[0]
     
     GetReceiptContours(input_path)

@@ -3,13 +3,7 @@ from PIL import Image
 import pyocr
 import pyocr.builders
 import re
-
-
-def get_input_file_list():
-    path = './img/unprocessed'
-    files = os.listdir(path)
-    input_file_list = [os.path.join(path, f) for f in files if re.search(r'.+\.JPG', f)]
-    return input_file_list
+from get_file_path_list import get_input_path_list
 
 
 class OcrReceipt:
@@ -70,8 +64,8 @@ class OcrReceipt:
 
 
 def main():
-    input_file_list = get_input_file_list()
-    input_file = input_file_list[2]
+    input_path_list = get_input_path_list(relative_path='../img/interim', extension='png')
+    input_file = input_path_list[0]
 
     ocr = OcrReceipt()
     receipt_content = ocr.ocr(input_file)
