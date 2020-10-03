@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 
 
 def get_input_path_list(relative_path, extension):
