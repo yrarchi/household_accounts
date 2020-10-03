@@ -281,22 +281,7 @@ class OperationFrame():
         self.price_place = price_place
         self.major_category_place = major_category_place
         self.medium_category_place = medium_category_place
-        self.show_button_write_csv()
         self.show_button_change_page(gui, input_file, receipt_no)
-
-
-    def show_button_write_csv(self):
-        def write_csv():
-            date = self.date_place.get()
-            shop = self.shop_place.get()
-            today = datetime.datetime.now().strftime('%Y%m%d')
-            with open('./csv/{}.csv'.format(today), mode='a') as file:
-                for item, price, major_category, medium_category in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place):
-                    row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop]
-                    csv.writer(file).writerow(row)
-        
-        write_csv_button = ttk.Button(self.frame, text='csvファイルに書き込み', command=write_csv)
-        write_csv_button.grid(row=0, column=0)
 
 
     def show_button_change_page(self, gui, input_file, input_path_list):
@@ -320,7 +305,7 @@ class OperationFrame():
         receipt_no = input_path_list.index(input_file)
         num_receipts = len(input_path_list)
         button_text = '次のレシートへ →' if receipt_no + 1 < num_receipts else '修正完了'
-        change_page_button = tk.Button(self.frame, text="次のレシートへ → ", command=next_step)
+        change_page_button = tk.Button(self.frame, text=button_text, command=next_step)
         change_page_button.grid(row=0, column=1)
 
 
