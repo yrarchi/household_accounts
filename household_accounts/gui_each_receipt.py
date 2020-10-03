@@ -5,6 +5,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from PIL import Image
 from resize_image import resize_img
+from gui_make_pages import MakePages
 
 
 class DivideScreen():
@@ -271,7 +272,7 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place):
+    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file):
         self.frame = frame
         self.date_place = date_place
         self.shop_place = shop_place
@@ -280,6 +281,7 @@ class OperationFrame():
         self.major_category_place = major_category_place
         self.medium_category_place = medium_category_place
         self.show_button_write_csv()
+        self.show_button_change_page(gui, input_file)
 
 
     def show_button_write_csv(self):
@@ -296,7 +298,13 @@ class OperationFrame():
         write_csv_button.grid(row=0, column=0)
 
 
-def main(read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, input_file, page2, gui):
+    def show_button_change_page(self, gui, input_file):
+        change_page_button = tk.Button(self.frame, text="次のレシートへ → ", command=lambda : MakePages.next_receipt(gui, input_file))
+        change_page_button.grid(row=0, column=1)
+
+
+def main(ocr_result, input_file, page2, gui):
+    read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
     page2 = DivideScreen(page2)
     receipt_info_frame = ReceiptInfoFrame(page2.receipt_info_frame, read_date, tax_excluded, page2, gui)
     date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
@@ -305,7 +313,7 @@ def main(read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_exclud
 
     item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place \
         = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place
-    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place)
+    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file)
 
 
 if __name__ == '__main__':

@@ -46,16 +46,17 @@ class GetReceiptContours():
 
 
 class GetEachReceiptImg(GetReceiptContours):
-    def __init__(self, input_path, receipt_no):
+    def __init__(self, input_path):
         super().__init__(input_path)
-        self.receipt_no = receipt_no
-        self.sorted_corner_list = self.get_sorted_corner_list()
-        self.width, self.height = self.get_length_receipt()
-        self.projective_transformation()
+        for i in range(len(self.approx_contours)):
+            receipt_no = i
+            self.sorted_corner_list = self.get_sorted_corner_list(receipt_no)
+            self.width, self.height = self.get_length_receipt()
+            self.projective_transformation(receipt_no)
 
 
-    def get_sorted_corner_list(self):
-        corner_list = [self.approx_contours[self.receipt_no][i][0] for i in range(4)]
+    def get_sorted_corner_list(self, receipt_no):
+        corner_list = [self.approx_contours[receipt_no][i][0] for i in range(4)]
         corner_x = list(map(lambda x: x[0], corner_list))
         corner_y = list(map(lambda x: x[1], corner_list))
         
@@ -77,12 +78,12 @@ class GetEachReceiptImg(GetReceiptContours):
         return width, height
 
 
-    def projective_transformation(self):
+    def projective_transformation(self, receipt_no):
         pts_before = np.float32(self.sorted_corner_list)
         pts_after = np.float32([[0,self.height], [0,0], [self.width,0], [self.width,self.height]])
         M = cv2.getPerspectiveTransform(pts_before, pts_after)
         dst = cv2.warpPerspective(self.input_file, M, (int(self.width), int(self.height)))
-        cv2.imwrite('{}/receipt_{}.png'.format(self.interim_path, self.input_filename), dst)
+        cv2.imwrite('{}/each_receipt/receipt_{}_{}.png'.format(self.interim_path, self.input_filename, receipt_no), dst)
 
 
 def main():
@@ -90,7 +91,7 @@ def main():
     input_path = input_path_list[0]
     
     GetReceiptContours(input_path)
-    GetEachReceiptImg(input_path, 0)
+    GetEachReceiptImg(input_path)
 
 
 if __name__ == '__main__':

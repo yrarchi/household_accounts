@@ -2,7 +2,7 @@ import tkinter as tk
 from PIL import Image
 
 from get_file_path_list import get_input_path_list
-from gui_make_pages import change_page
+from gui_make_pages import MakePages
 from resize_image import resize_img
 
 
@@ -10,13 +10,12 @@ class MakePage1():
     width = 1400
     height = 600
 
-    def __init__(self, page1, page2):
+    def __init__(self, page1, gui):
         self.page1 = page1
-        self.page2 = page2
-        self.show_receipt_contours()
+        self.show_receipt_contours(gui)
 
 
-    def show_receipt_contours(self):
+    def show_receipt_contours(self, gui):
         self.titleLabel = tk.Label(self.page1, text="レシート検知結果")
         self.titleLabel.grid(row=0, column=0)
 
@@ -30,5 +29,5 @@ class MakePage1():
         canvas.create_image(0, 0, image=img, anchor='nw')
         canvas.grid(row=1, column=0)
 
-        self.change_pageButton = tk.Button(self.page1, text="各レシートの読み取りへ進む → ", command=lambda : change_page(self.page2))
+        self.change_pageButton = tk.Button(self.page1, text="各レシートの読み取りへ進む → ", command=lambda : MakePages.next_receipt(gui, 0))
         self.change_pageButton.grid(row=2, column=0)
