@@ -1,3 +1,6 @@
+import csv
+import datetime
+import os
 import tkinter as tk
 import gui_each_receipt
 
@@ -29,11 +32,26 @@ class MakePages(tk.Tk):
         self.page1.grid(row=0, column=0, sticky="nsew")
 
 
-    def next_receipt(self, input_file):
-        next_receipt_no = self.input_path_list.index(input_file) + 1 if input_file != 0 else 0
+    def change_page(self):
         self.next_page = tk.Frame()
         self.next_page.grid(row=0, column=0, sticky="nsew")
         self.next_page.tkraise()
+
+
+    def next_receipt(self, receipt_no):
+        self.change_page()
+        next_receipt_no = receipt_no + 1
         next_ocr_result = self.ocr_result[self.input_path_list[next_receipt_no]]
         next_input_file = self.input_path_list[next_receipt_no]
-        gui_each_receipt.main(next_ocr_result, next_input_file, self.next_page, self)
+        gui_each_receipt.main(next_ocr_result, next_input_file, self.next_page, self, self.input_path_list)
+    
+
+    def last_page(self):
+        self.change_page()
+        today = datetime.datetime.now().strftime('%Y%m%d')
+        csv_path = 'csv/{}.csv'.format(today)
+        message = '終了しました。読み取ったデータは{}に保存されています。'.format(csv_path)
+        message_label = tk.Label(self.next_page, text=message)
+        message_label.pack()
+        close_button = tk.Button(self.next_page, text='閉じる', command=self.destroy)
+        close_button.pack()

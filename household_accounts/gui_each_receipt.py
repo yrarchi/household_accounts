@@ -1,5 +1,6 @@
 import datetime
 import csv
+import os
 import re
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -272,7 +273,7 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file):
+    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file, receipt_no):
         self.frame = frame
         self.date_place = date_place
         self.shop_place = shop_place
@@ -281,7 +282,7 @@ class OperationFrame():
         self.major_category_place = major_category_place
         self.medium_category_place = medium_category_place
         self.show_button_write_csv()
-        self.show_button_change_page(gui, input_file)
+        self.show_button_change_page(gui, input_file, receipt_no)
 
 
     def show_button_write_csv(self):
@@ -298,12 +299,32 @@ class OperationFrame():
         write_csv_button.grid(row=0, column=0)
 
 
-    def show_button_change_page(self, gui, input_file):
-        change_page_button = tk.Button(self.frame, text="次のレシートへ → ", command=lambda : MakePages.next_receipt(gui, input_file))
+    def show_button_change_page(self, gui, input_file, input_path_list):
+        def next_step():
+            def write_modified_result():
+                date = self.date_place.get()
+                shop = self.shop_place.get()
+                today = datetime.datetime.now().strftime('%Y%m%d')
+                csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
+                with open(csv_path, mode='a') as file:
+                    for item, price, major_category, medium_category in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place):
+                        row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop]
+                        csv.writer(file).writerow(row)
+            
+            write_modified_result()
+            if receipt_no + 1 < num_receipts:
+                MakePages.next_receipt(gui, receipt_no)
+            else:
+                MakePages.last_page(gui)
+
+        receipt_no = input_path_list.index(input_file)
+        num_receipts = len(input_path_list)
+        button_text = '次のレシートへ →' if receipt_no + 1 < num_receipts else '修正完了'
+        change_page_button = tk.Button(self.frame, text="次のレシートへ → ", command=next_step)
         change_page_button.grid(row=0, column=1)
 
 
-def main(ocr_result, input_file, page2, gui):
+def main(ocr_result, input_file, page2, gui, input_path_list):
     read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
     page2 = DivideScreen(page2)
     receipt_info_frame = ReceiptInfoFrame(page2.receipt_info_frame, read_date, tax_excluded, page2, gui)
@@ -313,7 +334,8 @@ def main(ocr_result, input_file, page2, gui):
 
     item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place \
         = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place
-    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file)
+    
+    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file, input_path_list)
 
 
 if __name__ == '__main__':
