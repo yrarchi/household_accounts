@@ -52,6 +52,6 @@ class MakePages(tk.Tk):
         csv_path = 'csv/{}.csv'.format(today)
         message = '終了しました。読み取ったデータは{}に保存されています。'.format(csv_path)
         message_label = tk.Label(self.next_page, text=message)
-        message_label.pack()
+        message_label.pack(anchor='center')
         close_button = tk.Button(self.next_page, text='閉じる', command=self.destroy)
-        close_button.pack()
+        close_button.pack(anchor='s', ipadx=100, ipady=15)

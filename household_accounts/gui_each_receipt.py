@@ -110,7 +110,7 @@ class ImgFrame():
         resize_input_file = resize_img(input_file, self.width, self.height)
 
         img = tk.PhotoImage(file = resize_input_file)
-        canvas.create_image(0, 0, anchor='nw', image=img)
+        canvas.create_image(self.width/2, self.height/2, anchor='center', image=img)
         canvas.pack(expand = True, fill = tk.BOTH)
 
 
@@ -306,7 +306,7 @@ class OperationFrame():
         num_receipts = len(input_path_list)
         button_text = '次のレシートへ →' if receipt_no + 1 < num_receipts else '修正完了'
         change_page_button = tk.Button(self.frame, text=button_text, command=next_step)
-        change_page_button.grid(row=0, column=1)
+        change_page_button.pack(ipadx=100, ipady=15)
 
 
 def main(ocr_result, input_file, page2, gui, input_path_list):
