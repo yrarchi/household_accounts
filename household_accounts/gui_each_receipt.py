@@ -117,7 +117,7 @@ class ImgFrame():
 class ItemFrame():
     major_category_list = ['食費', '光熱費']  # todo: DBから引っ張るようにする
     medium_category_list = ['野菜', '米']  # todo: DBから引っ張るようにする
-    column_list = ['品目', '読み取り価格', '軽減税率', '税込価格', '大項目', '中項目', '付帯費', '付帯費内容', '特別費']
+    column_list = ['品目', '読み取り価格', '軽減税率', '税込価格', '大項目', '中項目', '付帯費', '付帯費内容', '特別費', '必要行']
     tax_rate = 1.1
     reduced_tax_rate = 1.08
 
@@ -128,7 +128,7 @@ class ItemFrame():
         self.page2 = page2
         self.gui = gui
         self.show_item_column()
-        self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place \
+        self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place, self.required_place \
             = self.get_item_value_list(read_item, read_price, read_reduced_tax_rate_flg)
         self.show_price_tax_in(read_price, read_reduced_tax_rate_flg, read_tax_excluded)
         self.show_button_recalculation(self.price_place, self.reduced_tax_rate_place, tax_place)
@@ -141,7 +141,7 @@ class ItemFrame():
 
 
     def show_item_value(self, item, price, reduced_tax_rate_flg, row):
-        def validate_price(value):
+        def price_validate(value):
             try:
                 int(value) is int
             except ValueError:
@@ -152,9 +152,20 @@ class ItemFrame():
             return validate_result
 
 
-        def invalid_price():
+        def price_invalid():
             price_box['bg'] = 'tomato'
 
+
+        def required_validate():
+            if required_flg_var.get():
+                pass
+            else:
+                item_box.delete(0, tk.END)
+                price_box.delete(0, tk.END)
+                major_category.set('')
+                medium_category.set('')
+                extra_cost.delete(0, tk.END)
+                extra_cost_detail.delete(0, tk.END)
 
         row = row + 1
 
@@ -162,15 +173,15 @@ class ItemFrame():
         item_box.insert(tk.END, item)
         item_box.grid(row=row, column=0)
 
-        validate_cmd = self.gui.register(validate_price)
-        invalid_cmd = self.gui.register(invalid_price)
+        price_validate_cmd = self.gui.register(price_validate)
+        price_invalid_cmd = self.gui.register(price_invalid)
         price_box = tk.Entry(self.frame, width=5, justify=tk.RIGHT)
         price_box.grid(row=row, column=1)
         price_box.insert(tk.END, price)  # バリデーション前に入力して初期値についてもチェックする
         price_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
-        price_box['validatecommand'] = (validate_cmd, '%s')  # %s : 入力されている値
+        price_box['validatecommand'] = (price_validate_cmd, '%s')  # %s : 入力されている値
         price_box['validate'] = 'focus'
-        price_box['invalidcommand'] = (invalid_cmd)
+        price_box['invalidcommand'] = (price_invalid_cmd)
         
 
         reduced_tax_rate_flg_var = tk.IntVar(value=reduced_tax_rate_flg)
@@ -196,7 +207,11 @@ class ItemFrame():
         special_cost = ttk.Checkbutton(self.frame)
         special_cost.grid(row=row, column=8)
 
-        return item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category
+        required_flg_var = tk.IntVar(value=1)
+        required_flg = ttk.Checkbutton(self.frame, variable=required_flg_var, command=required_validate)
+        required_flg.grid(row=row, column=9)
+
+        return item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var
 
 
     def get_item_value_list(self, item_list, price_list, reduced_tax_rate_flg_list):
@@ -205,15 +220,17 @@ class ItemFrame():
         reduced_tax_rate_place = []
         major_category_place = []
         medium_category_place = []
+        required_place = []
         for row, (item, price, reduced_tax_rate_flg) in enumerate(zip(item_list, price_list, reduced_tax_rate_flg_list)):
-            item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category \
+            item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var \
                 = self.show_item_value(item, price, reduced_tax_rate_flg, row)
             item_place.append(item_box)
             price_place.append(price_box)
             reduced_tax_rate_place.append(reduced_tax_rate_flg_var)
             major_category_place.append(major_category)
             medium_category_place.append(medium_category)
-        return item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place
+            required_place.append(required_flg_var)
+        return item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place
 
 
     def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):
@@ -251,7 +268,9 @@ class ItemFrame():
             sum_price_str_labal = tk.Label(self.frame, text='税込価格合計')
             sum_price_str_labal.grid(row=self.num_item+3,column=1, columnspan=2, sticky=tk.E)
             
-            sum_price = sum(price_tax_in_list)
+            required = list(map(lambda x: x.get(), self.required_place))
+            required_price_tax_in = [p for p, r in zip(price_tax_in_list, required) if r==1]
+            sum_price = sum(required_price_tax_in)
             price_sum_labal = tk.Label(self.frame, text=sum_price)
             price_sum_labal.grid(row=self.num_item+3,column=3, sticky=tk.E, ipadx=20)
 
@@ -273,7 +292,7 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file, receipt_no):
+    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, required_place, gui, input_file, receipt_no):
         self.frame = frame
         self.date_place = date_place
         self.shop_place = shop_place
@@ -281,6 +300,7 @@ class OperationFrame():
         self.price_place = price_place
         self.major_category_place = major_category_place
         self.medium_category_place = medium_category_place
+        self.required_place = required_place
         self.show_button_change_page(gui, input_file, receipt_no)
 
 
@@ -292,9 +312,11 @@ class OperationFrame():
                 today = datetime.datetime.now().strftime('%Y%m%d')
                 csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
                 with open(csv_path, mode='a') as file:
-                    for item, price, major_category, medium_category in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place):
-                        row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop]
-                        csv.writer(file).writerow(row)
+                    for item, price, major_category, medium_category, required \
+                         in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place, self.required_place):
+                        if required.get() == 1:
+                            row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop] 
+                            csv.writer(file).writerow(row)
             
             write_modified_result()
             if receipt_no + 1 < num_receipts:
@@ -317,10 +339,10 @@ def main(ocr_result, input_file, page2, gui, input_path_list):
     img_frame = ImgFrame(page2.img_frame, page2.img_width, page2.height, input_file)
     item_frame = ItemFrame(page2.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, page2, gui)
 
-    item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place \
-        = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place
+    item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place \
+        = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place, item_frame.required_place
     
-    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file, input_path_list)
+    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, required_place, gui, input_file, input_path_list)
 
 
 if __name__ == '__main__':
