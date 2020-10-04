@@ -5,13 +5,6 @@ import pyocr.builders
 import re
 
 
-def get_input_file_list():
-    path = './img/unprocessed'
-    files = os.listdir(path)
-    input_file_list = [os.path.join(path, f) for f in files if re.search(r'.+\.JPG', f)]
-    return input_file_list
-
-
 class OcrReceipt:
     date_regex = r'.{4}(/|年).{1,2}(/|月)[0-9]{1,2}'
     total_regex = r'(合計|小計|ノヽ言十|消費税).*[0-9]*'
@@ -21,6 +14,14 @@ class OcrReceipt:
     top_num_regex = r'^[0-9]*'
     tax_ex_regex = r'外税'
     tax_in_regex = r'(内税|内消費税等)'
+
+    def __init__(self, input_file):
+        self.input_file = input_file
+        receipt_content = self.ocr(self.input_file)
+        self.payment_date = self.get_payment_date(receipt_content)
+        self.item, self.price, self.reduced_tax_rate_flg = self.get_item_price_reduced_tax_rate_flg(receipt_content)
+        self.tax_excluded = self.get_tax_excluded_included(receipt_content)
+
 
     def ocr(self, input_file):
         tool = pyocr.get_available_tools()[0]
@@ -39,15 +40,20 @@ class OcrReceipt:
 
 
     def get_payment_date(self, receipt_content):
-        payment_date = 0
         payment_date = [re.search(self.date_regex, s).group() for s in receipt_content if re.search(self.date_regex+r'(\(|日)', s)]
+        payment_date = payment_date if payment_date != [] else "0000/00/00"
         payment_date = re.sub(r'(年|月)', r'/', payment_date[0])
         return payment_date
 
 
     def get_item_price_reduced_tax_rate_flg(self, receipt_content):
-        start_low = [receipt_content.index(s) for s in receipt_content if re.search(self.date_regex, s)][0] + 1  # payment_dateの次の行が開始行とする
-        end_low = [receipt_content.index(s) for s in receipt_content if re.search(self.total_regex, s)][0]
+        try:
+            start_low = [receipt_content.index(s) for s in receipt_content if re.search(self.date_regex, s)][0] + 1  # payment_dateの次の行が開始行とする
+        except IndexError:
+            start_low = 0  # payment_dateがない場合は最初の行を開始行とする
+
+        sum_lows = [receipt_content.index(s) for s in receipt_content if re.search(self.total_regex, s)]
+        end_low = sum_lows[0] if sum_lows != [] else len(receipt_content)
 
         item_and_price = receipt_content[start_low:end_low]
         item_and_price = [s for s in item_and_price if re.search(self.item_price_regex, s)]  
@@ -69,17 +75,12 @@ class OcrReceipt:
         return tax_excluded
 
 
-def main():
-    input_file_list = get_input_file_list()
-    input_file = input_file_list[2]
-
-    ocr = OcrReceipt()
-    receipt_content = ocr.ocr(input_file)
-    payment_date = ocr.get_payment_date(receipt_content)
-    item, price, reduced_tax_rate_flg = ocr.get_item_price_reduced_tax_rate_flg(receipt_content)
-    tax_excluded = ocr.get_tax_excluded_included(receipt_content)
-    return payment_date, item, price, reduced_tax_rate_flg, tax_excluded, input_file
-
+def main(input_path_list):
+    ocr_result = {}
+    for input_file in input_path_list:
+        ocr = OcrReceipt(input_file)
+        ocr_result[input_file] = [ocr.payment_date, ocr.item, ocr.price, ocr.reduced_tax_rate_flg, ocr.tax_excluded]
+    return ocr_result
 
 if __name__ == '__main__':
     main()

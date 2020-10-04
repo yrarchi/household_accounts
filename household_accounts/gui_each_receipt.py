@@ -1,12 +1,15 @@
 import datetime
 import csv
-from PIL import Image
+import os
 import re
 import tkinter as tk
 import tkinter.ttk as ttk
+from PIL import Image
+from resize_image import resize_img
+from gui_make_pages import MakePages
 
 
-class MakeGUI(tk.Tk):
+class DivideScreen():
     width = 1400
     img_width = 300
     info_width = width - img_width
@@ -15,28 +18,22 @@ class MakeGUI(tk.Tk):
     operation_height = 100
     item_height = height - info_height - operation_height
 
-    def __init__(self):
-        super().__init__()
-        self.make_screen()
+    def __init__(self, page2):
+        self.page2 = page2
         self.img_frame, self.receipt_info_frame, self.item_frame, self.operation_frame = self.divide_screen()
 
 
-    def make_screen(self):
-        self.title('読み取り内容修正')
-        self.geometry('{}x{}'.format(self.width, self.height))
-
-
     def divide_screen(self):
-        receipt_img_frame = tk.Frame(self, width=self.img_width, height=self.height)
+        receipt_img_frame = tk.Frame(self.page2, width=self.img_width, height=self.height)
         receipt_img_frame.grid(row=0, column=0, rowspan=3, sticky=(tk.N, tk.S))
 
-        receipt_info_frame = tk.Frame(self, width=self.info_width, height=self.info_height)
+        receipt_info_frame = tk.Frame(self.page2, width=self.info_width, height=self.info_height)
         receipt_info_frame.grid(row=0, column=1)
 
-        item_frame = tk.Frame(self, width=self.info_width, height=self.item_height)
+        item_frame = tk.Frame(self.page2, width=self.info_width, height=self.item_height)
         item_frame.grid(row=1, column=1)
 
-        operation_frame = tk.Frame(self, width=self.info_width, height=self.operation_height)
+        operation_frame = tk.Frame(self.page2, width=self.info_width, height=self.operation_height)
         operation_frame.grid(row=2, column=1)
 
         return receipt_img_frame, receipt_info_frame, item_frame, operation_frame
@@ -46,8 +43,9 @@ class ReceiptInfoFrame():
     column_list = ['日付', '店舗', '内税/外税']
     shop_list = ['店舗', 'コンビニ']  # あとでDBから引っ張るようにする
 
-    def __init__(self, frame, read_date, tax_excluded, gui):
+    def __init__(self, frame, read_date, tax_excluded, page2, gui):
         self.frame = frame
+        self.page2 = page2
         self.gui = gui
         self.show_info_column()
         self.date_box, self.shop, self.tax_var = self.show_info_value(read_date, tax_excluded)
@@ -105,33 +103,14 @@ class ImgFrame():
         self.show_img(frame, input_file)
 
 
-    def convert_jpg_to_png(self, input_file, img):
-        png_input_file = input_file[:-4] + '.png'
-        img.save(png_input_file)
-        return png_input_file
-
-
-    def resize_img(self, input_file, img):
-        img_width, img_height = img.size
-        rate_width = img_width / self.width
-        rate_height = img_height / self.height
-        if abs(rate_width-1) >= abs(rate_height-1):
-            resize_img = img.resize((self.width, int(img_height/rate_width)))
-        else:
-            resize_img = img.resize((int(img_width/rate_height), self.height))
-        resize_input_file = input_file[:-4] + '_resize' + '.png'
-        resize_img.save(resize_input_file)
-        return resize_input_file
-
-
     def show_img(self, frame, input_file):
+        global img
         canvas = tk.Canvas(frame, bg='black', width = self.width, height = self.height)
         img = Image.open(input_file)
-        if input_file[-4:] != '.png':
-            input_file = self.convert_jpg_to_png(input_file, img)
-        resize_input_file = self.resize_img(input_file, img)
-        self.img = tk.PhotoImage(file = resize_input_file)
-        canvas.create_image(0, 0, anchor='nw', image=self.img)
+        resize_input_file = resize_img(input_file, self.width, self.height)
+
+        img = tk.PhotoImage(file = resize_input_file)
+        canvas.create_image(self.width/2, self.height/2, anchor='center', image=img)
         canvas.pack(expand = True, fill = tk.BOTH)
 
 
@@ -143,9 +122,10 @@ class ItemFrame():
     reduced_tax_rate = 1.08
 
         
-    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place, gui):
+    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place, page2, gui):
         self.num_item = len(read_price)
         self.frame = frame
+        self.page2 = page2
         self.gui = gui
         self.show_item_column()
         self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place \
@@ -293,7 +273,7 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place):
+    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file, receipt_no):
         self.frame = frame
         self.date_place = date_place
         self.shop_place = shop_place
@@ -301,35 +281,46 @@ class OperationFrame():
         self.price_place = price_place
         self.major_category_place = major_category_place
         self.medium_category_place = medium_category_place
-        self.show_button_write_csv()
+        self.show_button_change_page(gui, input_file, receipt_no)
 
 
-    def show_button_write_csv(self):
-        def write_csv():
-            date = self.date_place.get()
-            shop = self.shop_place.get()
-            today = datetime.datetime.now().strftime('%Y%m%d')
-            with open('./csv/{}.csv'.format(today), mode='a') as file:
-                for item, price, major_category, medium_category in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place):
-                    row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop]
-                    csv.writer(file).writerow(row)
-        
-        write_csv_button = ttk.Button(self.frame, text='csvファイルに書き込み', command=write_csv)
-        write_csv_button.grid(row=0, column=0)
+    def show_button_change_page(self, gui, input_file, input_path_list):
+        def next_step():
+            def write_modified_result():
+                date = self.date_place.get()
+                shop = self.shop_place.get()
+                today = datetime.datetime.now().strftime('%Y%m%d')
+                csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
+                with open(csv_path, mode='a') as file:
+                    for item, price, major_category, medium_category in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place):
+                        row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop]
+                        csv.writer(file).writerow(row)
+            
+            write_modified_result()
+            if receipt_no + 1 < num_receipts:
+                MakePages.next_receipt(gui, receipt_no)
+            else:
+                MakePages.last_page(gui)
+
+        receipt_no = input_path_list.index(input_file)
+        num_receipts = len(input_path_list)
+        button_text = '次のレシートへ →' if receipt_no + 1 < num_receipts else '修正完了'
+        change_page_button = tk.Button(self.frame, text=button_text, command=next_step)
+        change_page_button.pack(ipadx=100, ipady=15)
 
 
-def main(read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, input_file):
-    gui = MakeGUI()
-    receipt_info_frame = ReceiptInfoFrame(gui.receipt_info_frame, read_date, tax_excluded, gui)
+def main(ocr_result, input_file, page2, gui, input_path_list):
+    read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
+    page2 = DivideScreen(page2)
+    receipt_info_frame = ReceiptInfoFrame(page2.receipt_info_frame, read_date, tax_excluded, page2, gui)
     date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
-    img_frame = ImgFrame(gui.img_frame, gui.img_width, gui.height, input_file)
-    item_frame = ItemFrame(gui.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, gui)
+    img_frame = ImgFrame(page2.img_frame, page2.img_width, page2.height, input_file)
+    item_frame = ItemFrame(page2.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, page2, gui)
 
     item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place \
         = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place
-    operation_frame = OperationFrame(gui.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place)
-
-    gui.mainloop()
+    
+    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, gui, input_file, input_path_list)
 
 
 if __name__ == '__main__':
