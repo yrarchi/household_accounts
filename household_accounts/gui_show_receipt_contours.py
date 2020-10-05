@@ -16,7 +16,7 @@ class MakePage1():
 
 
     def show_receipt_contours(self, gui):
-        self.titleLabel = tk.Label(self.page1, text="レシート検知結果")
+        self.titleLabel = tk.Label(self.page1, text='レシート検知結果')
         self.titleLabel.pack()
 
         global img
@@ -29,5 +29,5 @@ class MakePage1():
         canvas.create_image(self.width/2, (self.height-100)/2, image=img, anchor='center')
         canvas.pack(anchor='center')
 
-        self.change_pageButton = tk.Button(self.page1, text="各レシートの読み取りへ進む → ", command=lambda : MakePages.next_receipt(gui, 0))
+        self.change_pageButton = tk.Button(self.page1, text='各レシートの読み取りへ進む → ', command=lambda : MakePages.next_receipt(gui, 0))
         self.change_pageButton.pack(anchor='s', ipadx=100, ipady=15, padx=50)

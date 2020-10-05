@@ -29,12 +29,12 @@ class MakePages(tk.Tk):
 
     def make_page1(self):
         self.page1 = tk.Frame()
-        self.page1.grid(row=0, column=0, sticky="nsew")
+        self.page1.grid(row=0, column=0, sticky='nsew')
 
 
     def change_page(self):
         self.next_page = tk.Frame()
-        self.next_page.grid(row=0, column=0, sticky="nsew")
+        self.next_page.grid(row=0, column=0, sticky='nsew')
         self.next_page.tkraise()
 
 
