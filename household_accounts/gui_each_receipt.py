@@ -5,15 +5,17 @@ import re
 import tkinter as tk
 import tkinter.ttk as ttk
 from PIL import Image
+
+import config
 from resize_image import resize_img
 from gui_make_pages import MakePages
 
 
 class DivideScreen():
-    width = 1400
+    width = config.width
     img_width = 300
     info_width = width - img_width
-    height = 600
+    height = config.height
     info_height = 60
     operation_height = 100
     item_height = height - info_height - operation_height
@@ -41,7 +43,7 @@ class DivideScreen():
 
 class ReceiptInfoFrame():
     column_list = ['日付', '店舗', '内税/外税']
-    shop_list = ['店舗', 'コンビニ']  # あとでDBから引っ張るようにする
+    shop_list = config.shop_list
 
     def __init__(self, frame, read_date, tax_excluded, page2, gui):
         self.frame = frame
@@ -115,11 +117,11 @@ class ImgFrame():
 
 
 class ItemFrame():
-    major_category_list = ['食費', '光熱費']  # todo: DBから引っ張るようにする
-    medium_category_list = ['野菜', '米']  # todo: DBから引っ張るようにする
     column_list = ['品目', '読み取り価格', '軽減税率', '税込価格', '大項目', '中項目', '付帯費', '付帯費内容', '特別費', '必要行']
-    tax_rate = 1.1
-    reduced_tax_rate = 1.08
+    major_category_list = config.major_category_list
+    medium_category_list = config.medium_category_list
+    tax_rate = config.tax_rate
+    reduced_tax_rate = config.reduced_tax_rate
 
         
     def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place, page2, gui):

@@ -1,14 +1,15 @@
 import tkinter as tk
 from PIL import Image
 
+import config
 from get_file_path_list import get_input_path_list
 from gui_make_pages import MakePages
 from resize_image import resize_img
 
 
 class MakePage1():
-    width = 1400
-    height = 600
+    width = config.width
+    height = config.height
 
     def __init__(self, page1, gui):
         self.page1 = page1

@@ -2,13 +2,16 @@ import csv
 import datetime
 import os
 import tkinter as tk
+
 import gui_each_receipt
+import config
+
 
 class MakePages(tk.Tk):
-    width = 1400
+    width = config.width
     img_width = 300
     info_width = width - img_width
-    height = 600
+    height = config.height
     info_height = 60
     operation_height = 100
     item_height = height - info_height - operation_height
