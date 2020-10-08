@@ -11,13 +11,13 @@ class MakePage1():
     width = config.width
     height = config.height
 
-    def __init__(self, page1, gui):
-        self.page1 = page1
+    def __init__(self, page, gui):
+        self.page = page
         self.show_receipt_contours(gui)
 
 
     def show_receipt_contours(self, gui):
-        self.titleLabel = tk.Label(self.page1, text='レシート検知結果')
+        self.titleLabel = tk.Label(self.page, text='レシート検知結果')
         self.titleLabel.pack()
 
         global img
@@ -26,9 +26,9 @@ class MakePage1():
         resize_file_path = resize_img(input_path, resize_width=self.width, resize_height=self.height-100)
         img = tk.PhotoImage(file = resize_file_path)
 
-        canvas = tk.Canvas(self.page1, width=self.width, height=self.height-100)
+        canvas = tk.Canvas(self.page, width=self.width, height=self.height-100)
         canvas.create_image(self.width/2, (self.height-100)/2, image=img, anchor='center')
         canvas.pack(anchor='center')
 
-        self.change_pageButton = tk.Button(self.page1, text='各レシートの読み取りへ進む → ', command=lambda : MakePages.next_receipt(gui, 0))
+        self.change_pageButton = tk.Button(self.page, text='各レシートの読み取りへ進む → ', command=lambda : MakePages.next_receipt(gui, 0))
         self.change_pageButton.pack(anchor='s', ipadx=100, ipady=15, padx=50)

@@ -20,22 +20,22 @@ class DivideScreen():
     operation_height = 100
     item_height = height - info_height - operation_height
 
-    def __init__(self, page2):
-        self.page2 = page2
+    def __init__(self, page):
+        self.page = page
         self.img_frame, self.receipt_info_frame, self.item_frame, self.operation_frame = self.divide_screen()
 
 
     def divide_screen(self):
-        receipt_img_frame = tk.Frame(self.page2, width=self.img_width, height=self.height)
+        receipt_img_frame = tk.Frame(self.page, width=self.img_width, height=self.height)
         receipt_img_frame.grid(row=0, column=0, rowspan=3, sticky=(tk.N, tk.S))
 
-        receipt_info_frame = tk.Frame(self.page2, width=self.info_width, height=self.info_height)
+        receipt_info_frame = tk.Frame(self.page, width=self.info_width, height=self.info_height)
         receipt_info_frame.grid(row=0, column=1)
 
-        item_frame = tk.Frame(self.page2, width=self.info_width, height=self.item_height)
+        item_frame = tk.Frame(self.page, width=self.info_width, height=self.item_height)
         item_frame.grid(row=1, column=1)
 
-        operation_frame = tk.Frame(self.page2, width=self.info_width, height=self.operation_height)
+        operation_frame = tk.Frame(self.page, width=self.info_width, height=self.operation_height)
         operation_frame.grid(row=2, column=1)
 
         return receipt_img_frame, receipt_info_frame, item_frame, operation_frame
@@ -45,9 +45,9 @@ class ReceiptInfoFrame():
     column_list = ['日付', '店舗', '内税/外税']
     shop_list = config.shop_list
 
-    def __init__(self, frame, read_date, tax_excluded, page2, gui):
+    def __init__(self, frame, read_date, tax_excluded, page, gui):
         self.frame = frame
-        self.page2 = page2
+        self.page = page
         self.gui = gui
         self.show_info_column()
         self.date_box, self.shop, self.tax_var = self.show_info_value(read_date, tax_excluded)
@@ -125,14 +125,14 @@ class ItemFrame():
     reduced_tax_rate = config.reduced_tax_rate
 
         
-    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place, page2, gui):
+    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place, page, gui):
         self.num_item = len(read_price)
         self.frame = frame
-        self.page2 = page2
+        self.page = page
         self.gui = gui
         self.show_item_column()
         self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place, self.required_place \
-            = self.get_item_value_list(read_item, read_price, read_reduced_tax_rate_flg)
+            = self.get_item_place_list(read_item, read_price, read_reduced_tax_rate_flg)
         self.show_price_tax_in(read_price, read_reduced_tax_rate_flg, read_tax_excluded)
         self.show_button_recalculation(self.price_place, self.reduced_tax_rate_place, tax_place)
 
@@ -217,7 +217,7 @@ class ItemFrame():
         return item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var
 
 
-    def get_item_value_list(self, item_list, price_list, reduced_tax_rate_flg_list):
+    def get_item_place_list(self, item_list, price_list, reduced_tax_rate_flg_list):
         item_place = []
         price_place = []
         reduced_tax_rate_place = []
@@ -334,18 +334,18 @@ class OperationFrame():
         change_page_button.pack(ipadx=100, ipady=15)
 
 
-def main(ocr_result, input_file, page2, gui, input_path_list):
+def main(ocr_result, input_file, page, gui, input_path_list):
     read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
-    page2 = DivideScreen(page2)
-    receipt_info_frame = ReceiptInfoFrame(page2.receipt_info_frame, read_date, tax_excluded, page2, gui)
+    page = DivideScreen(page)
+    receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, read_date, tax_excluded, page, gui)
     date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
-    img_frame = ImgFrame(page2.img_frame, page2.img_width, page2.height, input_file)
-    item_frame = ItemFrame(page2.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, page2, gui)
+    img_frame = ImgFrame(page.img_frame, page.img_width, page.height, input_file)
+    item_frame = ItemFrame(page.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, page, gui)
 
     item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place \
         = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place, item_frame.required_place
     
-    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, required_place, gui, input_file, input_path_list)
+    operation_frame = OperationFrame(page.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, required_place, gui, input_file, input_path_list)
 
 
 if __name__ == '__main__':
