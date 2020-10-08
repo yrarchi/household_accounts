@@ -102,12 +102,13 @@ class ImgFrame():
     def __init__(self, frame, width, height, input_file):
         self.width = width
         self.height = height
-        self.show_img(frame, input_file)
+        self.frame = frame
+        self.show_img(input_file)
 
 
-    def show_img(self, frame, input_file):
+    def show_img(self, input_file):
         global img
-        canvas = tk.Canvas(frame, bg='black', width = self.width, height = self.height)
+        canvas = tk.Canvas(self.frame, bg='black', width = self.width, height = self.height)
         img = Image.open(input_file)
         resize_input_file = resize_img(input_file, self.width, self.height)
 
