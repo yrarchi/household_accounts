@@ -17,7 +17,7 @@ class MakePages(tk.Tk):
     item_height = height - info_height - operation_height
 
 
-    def __init__(self, num_receipts, input_path_list, ocr_result):
+    def __init__(self, input_path_list, ocr_result):
         super().__init__()
         self.input_path_list = input_path_list
         self.ocr_result = ocr_result
