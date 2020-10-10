@@ -7,6 +7,7 @@ import tkinter.ttk as ttk
 from PIL import Image
 
 import config
+from calc import calc_price_tax_in, calc_sum_price
 from resize_image import resize_img
 from gui_make_pages import MakePages
 
@@ -80,7 +81,6 @@ class ReceiptInfoFrame():
         date_box['validatecommand'] = (validate_cmd, '%s')  # %s : 入力されている値
         date_box['validate'] = 'focus'
         date_box['invalidcommand'] = (invalid_cmd)
-
 
         shop = ttk.Combobox(self.frame)
         shop['values'] = self.shop_list
@@ -181,7 +181,6 @@ class ItemFrame():
         price_box['validatecommand'] = (price_validate_cmd, '%s')  # %s : 入力されている値
         price_box['validate'] = 'focus'
         price_box['invalidcommand'] = (price_invalid_cmd)
-        
 
         reduced_tax_rate_flg_var = tk.IntVar(value=reduced_tax_rate_flg)
         reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=reduced_tax_rate_flg_var)
@@ -232,27 +231,7 @@ class ItemFrame():
         return item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place
 
 
-    def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):
-        def calc_price_tax_in():
-            trans_price_list = []
-            for price in price_list:
-                try:
-                    price = int(price)
-                except ValueError:  # 金額を数値として読み取れていない（アルファベット等として認識）場合はいったん0円とする
-                    price = 0
-                trans_price_list.append(price)
-
-            price_tax_in_list = []
-            if tax_excluded_list:
-                for row, (price, reduced_tax_rate_flg) in enumerate(zip(trans_price_list, reduced_tax_rate_flg_list)):
-                    row = row + 1
-                    tax = self.reduced_tax_rate if reduced_tax_rate_flg else self.tax_rate
-                    price_tax_in_list.append(int(price * tax))  # 税込にして端数が出た場合は切り捨てとして扱う
-            else:
-                price_tax_in_list = trans_price_list
-            return price_tax_in_list
-
-        
+    def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):        
         def show_item_prices_tax_in(price_tax_in_list):
             for row, price_tax_in in enumerate(price_tax_in_list):
                 row = row + 1
@@ -260,23 +239,21 @@ class ItemFrame():
                 price_label.grid(row=row, column=3, sticky=tk.E, ipadx=20)
             
 
-        def show_sum_price_tax_in(price_tax_in_list):
+        def show_sum_price_tax_in(sum_price):
             blank_row_label = tk.Label(self.frame)
             blank_row_label.grid(row=self.num_item+2,column=3)
 
             sum_price_str_labal = tk.Label(self.frame, text='税込価格合計')
             sum_price_str_labal.grid(row=self.num_item+3,column=1, columnspan=2, sticky=tk.E)
             
-            required = list(map(lambda x: x.get(), self.required_place))
-            required_price_tax_in = [p for p, r in zip(price_tax_in_list, required) if r==1]
-            sum_price = sum(required_price_tax_in)
             price_sum_labal = tk.Label(self.frame, text=sum_price)
             price_sum_labal.grid(row=self.num_item+3,column=3, sticky=tk.E, ipadx=20)
 
 
-        price_tax_in_list = calc_price_tax_in()
+        price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list, self.tax_rate, self.reduced_tax_rate)
+        sum_price = calc_sum_price(price_tax_in_list, self.required_place)
         show_item_prices_tax_in(price_tax_in_list)
-        show_sum_price_tax_in(price_tax_in_list)
+        show_sum_price_tax_in(sum_price)
 
 
     def show_button_recalculation(self, price_place, reduced_tax_rate_place, tax_place):
