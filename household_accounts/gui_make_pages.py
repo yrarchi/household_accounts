@@ -9,13 +9,7 @@ import config
 
 class MakePages(tk.Tk):
     width = config.width
-    img_width = 300
-    info_width = width - img_width
     height = config.height
-    info_height = 60
-    operation_height = 100
-    item_height = height - info_height - operation_height
-
 
     def __init__(self, input_path_list, ocr_result):
         super().__init__()

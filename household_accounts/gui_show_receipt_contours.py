@@ -11,8 +11,8 @@ class MakePage1():
     width = config.width
     height = config.height
 
-    def __init__(self, page, gui):
-        self.page = page
+    def __init__(self, gui):
+        self.page = gui.page1
         self.show_receipt_contours(gui)
 
 
