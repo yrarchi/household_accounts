@@ -45,10 +45,8 @@ class ReceiptInfoFrame():
     column_list = ['日付', '店舗', '内税/外税']
     shop_list = config.shop_list
 
-    def __init__(self, frame, read_date, tax_excluded, page, gui):
+    def __init__(self, frame, read_date, tax_excluded):
         self.frame = frame
-        self.page = page
-        self.gui = gui
         self.show_info_column()
         self.date_box, self.shop, self.tax_var = self.show_info_value(read_date, tax_excluded)
 
@@ -73,8 +71,8 @@ class ReceiptInfoFrame():
             date_box['bg'] = 'tomato'
 
 
-        validate_cmd = self.gui.register(validate_date)
-        invalid_cmd = self.gui.register(invalid_date)
+        validate_cmd = self.frame.register(validate_date)
+        invalid_cmd = self.frame.register(invalid_date)
         date_box = tk.Entry(self.frame)
         date_box.grid(row=1, column=0)
         date_box.insert(tk.END, read_date)  # バリデーション前に入力して初期値についてもチェックする
@@ -125,11 +123,9 @@ class ItemFrame():
     reduced_tax_rate = config.reduced_tax_rate
 
         
-    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place, page, gui):
+    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place):
         self.num_item = len(read_price)
         self.frame = frame
-        self.page = page
-        self.gui = gui
         self.show_item_column()
         self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place, self.required_place \
             = self.get_item_place_list(read_item, read_price, read_reduced_tax_rate_flg)
@@ -176,8 +172,8 @@ class ItemFrame():
         item_box.insert(tk.END, item)
         item_box.grid(row=row, column=0)
 
-        price_validate_cmd = self.gui.register(price_validate)
-        price_invalid_cmd = self.gui.register(price_invalid)
+        price_validate_cmd = self.frame.register(price_validate)
+        price_invalid_cmd = self.frame.register(price_invalid)
         price_box = tk.Entry(self.frame, width=5, justify=tk.RIGHT)
         price_box.grid(row=row, column=1)
         price_box.insert(tk.END, price)  # バリデーション前に入力して初期値についてもチェックする
@@ -337,10 +333,10 @@ class OperationFrame():
 def main(ocr_result, input_file, page, gui, input_path_list):
     read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
     page = DivideScreen(page)
-    receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, read_date, tax_excluded, page, gui)
+    receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, read_date, tax_excluded)
     date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
     img_frame = ImgFrame(page.img_frame, page.img_width, page.height, input_file)
-    item_frame = ItemFrame(page.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, page, gui)
+    item_frame = ItemFrame(page.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place)
 
     item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place \
         = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place, item_frame.required_place
