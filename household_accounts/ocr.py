@@ -17,6 +17,9 @@ class OcrReceipt:
     top_num_regex = r'^[0-9]*'
     tax_ex_regex = r'外税'
     tax_in_regex = r'(内税|内消費税等)'
+    conversion_num_before = ['O', 'U', 'b', 'Z', '<', 'i']  # アルファベットとして認識されている価格を変換するため
+    conversion_num_after = ['0', '0', '6', '2', '2', '1']
+
 
     def __init__(self, input_file):
         self.input_file = input_file
@@ -26,6 +29,7 @@ class OcrReceipt:
         main_contents = self.get_main_contents(receipt_content)
         self.reduced_tax_rate_flg = self.get_reduced_tax_rate_flg(main_contents)
         self.item, self.price = self.get_item_and_price(main_contents)
+        self.price = self.modify_price(self.price)
 
 
     def ocr(self, input_file):
@@ -85,6 +89,12 @@ class OcrReceipt:
         item = [re.sub(r'\\', r'', s) for s in item]
         price = [re.search(self.price_regex, s).group() for s in item_and_price]
         return item, price
+    
+
+    def modify_price(self, price):
+        for before, after in zip(self.conversion_num_before, self.conversion_num_after):
+            price = [re.sub(before, after, p) for p in price]
+        return price
 
 
 def summing_up_ocr_results(ocr):
