@@ -1,6 +1,7 @@
 import pyocr
 import pyocr.builders
 import re
+import time
 from datetime import datetime
 from PIL import Image
 
@@ -78,18 +79,30 @@ class OcrReceipt:
         return tax_excluded
 
 
+def summing_up_ocr_results(ocr):
+    result = {}
+    result['payment_date'] = ocr.payment_date
+    result['item'] = ocr.item
+    result['price'] = ocr.price
+    result['reduced_tax_rate_flg'] = ocr.reduced_tax_rate_flg
+    result['tax_excluded_flg'] = ocr.tax_excluded
+    return result
+
+
+def indicate_processing_status(no, num):
+    process_per = round(no / num * 100, 0)
+    process_bar = ('=' * no) + (' ' * (num - no))
+    print('\r処理状況: [{}] {}%'.format(process_bar, process_per), end='')
+    time.sleep(0.1)
+
+
 def main():
     input_path_list = get_input_path_list('../img/interim/each_receipt', 'png')
     ocr_results = {}
-    for input_file in input_path_list:
+    for i, input_file in enumerate(input_path_list):
         ocr = OcrReceipt(input_file)
-        result = {}
-        result['payment_date'] = ocr.payment_date
-        result['item'] = ocr.item
-        result['price'] = ocr.price
-        result['reduced_tax_rate_flg'] = ocr.reduced_tax_rate_flg
-        result['tax_excluded_flg'] = ocr.tax_excluded
-        ocr_results[input_file] = result
+        ocr_results[input_file] = summing_up_ocr_results(ocr)
+        indicate_processing_status(i, len(input_path_list))
     return ocr_results
 
 if __name__ == '__main__':

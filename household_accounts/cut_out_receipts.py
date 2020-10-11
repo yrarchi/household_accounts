@@ -90,7 +90,7 @@ class GetEachReceiptImg(GetReceiptContours):
 def main():
     input_path_list = get_input_path_list(relative_path='../img/unprocessed', extension='jpg')
     input_path = input_path_list[0]  # 現状、読み取り対象の画像は1枚しか対応していないため
-    
+    print('処理中...')
     GetReceiptContours(input_path)
     GetEachReceiptImg(input_path)
 
