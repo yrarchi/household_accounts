@@ -1,6 +1,6 @@
 # 画面サイズ
-width = 1400
-height = 600
+width = 1300
+height = 800
 
 # 税率
 tax_rate = 1.1
