@@ -70,10 +70,8 @@ class ReceiptInfoFrame():
                 validate_result = False
             return validate_result
 
-
         def invalid_date():
             date_box['bg'] = 'tomato'
-
 
         validate_cmd = self.frame.register(validate_date)
         invalid_cmd = self.frame.register(invalid_date)
@@ -162,10 +160,8 @@ class ItemFrame():
                 price_box['bg'] = 'black'
             return validate_result
 
-
         def price_invalid():
             price_box['bg'] = 'tomato'
-
 
         def required_validate():
             if required_flg_var.get():
@@ -250,7 +246,6 @@ class ItemFrame():
                 row = row + 1
                 price_label = tk.Label(self.frame, text=price_tax_in, justify=tk.RIGHT)
                 price_label.grid(row=row, column=4, sticky=tk.E, ipadx=20)
-            
 
         def show_sum_price_tax_in(sum_price):
             blank_row_label = tk.Label(self.frame)
@@ -261,7 +256,6 @@ class ItemFrame():
             
             price_sum_labal = tk.Label(self.frame, text=sum_price)
             price_sum_labal.grid(row=self.num_item+2, column=4, sticky=tk.E, ipadx=20)
-
 
         price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list)
         sum_price = calc_sum_price(price_tax_in_list, self.item_places["required"])
@@ -281,32 +275,30 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, info_place, item_places, gui, input_file):
+    def __init__(self, frame, info_places, item_places, gui, input_file):
         self.frame = frame
-        self.date_place = info_place["date"]
-        self.shop_place = info_place["shop"]
-        self.item_place = item_places["item"]
-        self.price_place = item_places["price"]
-        self.major_category_place = item_places["major_category"]
-        self.medium_category_place = item_places["medium_category"]
-        self.required_place = item_places["required"]
+        self.info_places = info_places
+        self.item_places = item_places
         self.show_button_next_receipt(gui, input_file)
 
 
     def show_button_next_receipt(self, gui, input_file):
         def next_step():
             def write_modified_result():
-                date = self.date_place.get()
-                shop = self.shop_place.get()
+                date = self.info_places["date"].get()
+                shop = self.info_places["shop"].get()
                 today = datetime.datetime.now().strftime('%Y%m%d')
                 csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
                 with open(csv_path, mode='a') as file:
-                    for item, price, major_category, medium_category, required \
-                         in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place, self.required_place):
-                        if required.get() == 1:
-                            row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop] 
-                            csv.writer(file).writerow(row)
-            
+                    required = self.item_places["required"]
+                    index_required = [i for i, r in enumerate(required) if r.get()==1]
+                    for i in index_required:
+                        item = self.item_places["item"][i].get()
+                        price = self.item_places["price"][i].get()
+                        major_category = self.item_places["major_category"][i].get()
+                        medium_category = self.item_places["medium_category"][i].get()
+                        row = [date, item, price, major_category, medium_category, shop]
+                        csv.writer(file).writerow(row)
 
             def next_receipt():
                 gui.change_page()
@@ -315,7 +307,6 @@ class OperationFrame():
                 next_ocr_result = gui.ocr_results[next_input_file]
                 main(next_ocr_result, next_input_file, gui.next_page, gui)
 
-                
             write_modified_result()
             if receipt_no + 1 < num_receipts:
                 next_receipt()
