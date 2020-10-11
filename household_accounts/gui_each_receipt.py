@@ -277,45 +277,48 @@ class ItemFrame():
 class OperationFrame():
     def __init__(self, frame, info_places, item_places, gui, input_file):
         self.frame = frame
+        self.gui = gui
         self.info_places = info_places
         self.item_places = item_places
-        self.show_button_next_receipt(gui, input_file)
+        self.receipt_no = gui.input_path_list.index(input_file)
+        self.num_receipts = len(gui.input_path_list)
+        self.show_button_next_receipt()
 
 
-    def show_button_next_receipt(self, gui, input_file):
+    def write_modified_result(self):
+        date = self.info_places["date"].get()
+        shop = self.info_places["shop"].get()
+        today = datetime.datetime.now().strftime('%Y%m%d')
+        csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
+        with open(csv_path, mode='a') as file:
+            required = self.item_places["required"]
+            index_required = [i for i, r in enumerate(required) if r.get()==1]
+            for i in index_required:
+                item = self.item_places["item"][i].get()
+                price = self.item_places["price"][i].get()
+                major_category = self.item_places["major_category"][i].get()
+                medium_category = self.item_places["medium_category"][i].get()
+                row = [date, item, price, major_category, medium_category, shop]
+                csv.writer(file).writerow(row)
+
+
+    def next_receipt(self):
+        self.gui.change_page()
+        next_receipt_no = self.receipt_no + 1
+        next_input_file = self.gui.input_path_list[next_receipt_no]
+        next_ocr_result = self.gui.ocr_results[next_input_file]
+        main(next_ocr_result, next_input_file, self.gui.next_page, self.gui)
+
+
+    def show_button_next_receipt(self):
         def next_step():
-            def write_modified_result():
-                date = self.info_places["date"].get()
-                shop = self.info_places["shop"].get()
-                today = datetime.datetime.now().strftime('%Y%m%d')
-                csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
-                with open(csv_path, mode='a') as file:
-                    required = self.item_places["required"]
-                    index_required = [i for i, r in enumerate(required) if r.get()==1]
-                    for i in index_required:
-                        item = self.item_places["item"][i].get()
-                        price = self.item_places["price"][i].get()
-                        major_category = self.item_places["major_category"][i].get()
-                        medium_category = self.item_places["medium_category"][i].get()
-                        row = [date, item, price, major_category, medium_category, shop]
-                        csv.writer(file).writerow(row)
-
-            def next_receipt():
-                gui.change_page()
-                next_receipt_no = receipt_no + 1
-                next_input_file = gui.input_path_list[next_receipt_no]
-                next_ocr_result = gui.ocr_results[next_input_file]
-                main(next_ocr_result, next_input_file, gui.next_page, gui)
-
-            write_modified_result()
-            if receipt_no + 1 < num_receipts:
-                next_receipt()
+            self.write_modified_result()
+            if self.receipt_no + 1 < self.num_receipts:
+                self.next_receipt()
             else:
-                show_last_page(gui)
+                show_last_page(self.gui)
 
-        receipt_no = gui.input_path_list.index(input_file)
-        num_receipts = len(gui.input_path_list)
-        button_text = '次のレシートへ →' if receipt_no + 1 < num_receipts else '修正完了'
+        button_text = '次のレシートへ →' if self.receipt_no + 1 < self.num_receipts else '修正完了'
         change_page_button = tk.Button(self.frame, text=button_text, command=next_step)
         change_page_button.pack(ipadx=100, ipady=15)
 
