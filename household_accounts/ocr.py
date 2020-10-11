@@ -79,7 +79,7 @@ class OcrReceipt:
 
 
 def main():
-    input_path_list = get_input_path_list(relative_path='../img/interim/each_receipt', extension='png')
+    input_path_list = get_input_path_list('../img/interim/each_receipt', 'png')
     ocr_results = {}
     for input_file in input_path_list:
         ocr = OcrReceipt(input_file)

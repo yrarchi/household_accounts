@@ -21,7 +21,7 @@ class MakeFirstPage():
         self.titleLabel.pack()
 
         global img
-        input_path_list = get_input_path_list(relative_path='../img/interim', extension='png')
+        input_path_list = get_input_path_list('../img/interim', 'png')
         input_path = [f for f in input_path_list if 'interim/write_contours_' in f][0]
         resize_file_path = resize_img(input_path, resize_width=self.width, resize_height=self.height-100)
         img = tk.PhotoImage(file = resize_file_path)

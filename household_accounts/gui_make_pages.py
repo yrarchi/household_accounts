@@ -10,7 +10,7 @@ class MakeGuiScreen(tk.Tk):
 
     def __init__(self, ocr_results):
         super().__init__()
-        self.input_path_list = get_input_path_list(relative_path='../img/interim/each_receipt', extension='png')
+        self.input_path_list = get_input_path_list('../img/interim/each_receipt', 'png')
         self.ocr_results = ocr_results
         self.make_screen()
         self.make_first_page()
