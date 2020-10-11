@@ -5,35 +5,38 @@ import re
 import tkinter as tk
 import tkinter.ttk as ttk
 from PIL import Image
+
+import config
+from calc import calc_price_tax_in, calc_sum_price
+from gui_last_page import show_last_page
 from resize_image import resize_img
-from gui_make_pages import MakePages
 
 
 class DivideScreen():
-    width = 1400
+    width = config.width
     img_width = 300
     info_width = width - img_width
-    height = 600
+    height = config.height
     info_height = 60
     operation_height = 100
     item_height = height - info_height - operation_height
 
-    def __init__(self, page2):
-        self.page2 = page2
+    def __init__(self, page):
+        self.page = page
         self.img_frame, self.receipt_info_frame, self.item_frame, self.operation_frame = self.divide_screen()
 
 
     def divide_screen(self):
-        receipt_img_frame = tk.Frame(self.page2, width=self.img_width, height=self.height)
+        receipt_img_frame = tk.Frame(self.page, width=self.img_width, height=self.height)
         receipt_img_frame.grid(row=0, column=0, rowspan=3, sticky=(tk.N, tk.S))
 
-        receipt_info_frame = tk.Frame(self.page2, width=self.info_width, height=self.info_height)
+        receipt_info_frame = tk.Frame(self.page, width=self.info_width, height=self.info_height)
         receipt_info_frame.grid(row=0, column=1)
 
-        item_frame = tk.Frame(self.page2, width=self.info_width, height=self.item_height)
+        item_frame = tk.Frame(self.page, width=self.info_width, height=self.item_height)
         item_frame.grid(row=1, column=1)
 
-        operation_frame = tk.Frame(self.page2, width=self.info_width, height=self.operation_height)
+        operation_frame = tk.Frame(self.page, width=self.info_width, height=self.operation_height)
         operation_frame.grid(row=2, column=1)
 
         return receipt_img_frame, receipt_info_frame, item_frame, operation_frame
@@ -41,14 +44,15 @@ class DivideScreen():
 
 class ReceiptInfoFrame():
     column_list = ['日付', '店舗', '内税/外税']
-    shop_list = ['店舗', 'コンビニ']  # あとでDBから引っ張るようにする
+    shop_list = config.shop_list
 
-    def __init__(self, frame, read_date, tax_excluded, page2, gui):
+    def __init__(self, frame, ocr_result):
         self.frame = frame
-        self.page2 = page2
-        self.gui = gui
+        self.payment_date = ocr_result['payment_date']
+        self.tax_ex_flg = ocr_result['tax_excluded_flg']
         self.show_info_column()
-        self.date_box, self.shop, self.tax_var = self.show_info_value(read_date, tax_excluded)
+        date_place, shop_place, tax_place = self.show_info_value(self.payment_date, self.tax_ex_flg)
+        self.info_places = self.make_places_info(date_place, shop_place, tax_place)
 
 
     def show_info_column(self):
@@ -57,7 +61,7 @@ class ReceiptInfoFrame():
             date_label.grid(row=0, column=column)
 
 
-    def show_info_value(self, read_date, tax_excluded):
+    def show_info_value(self, payment_date, tax_ex_flg):
         def validate_date(value):
             if re.fullmatch(r'[0-9]{4}/[0-9]{2}/[0-9]{2}', value):
                 validate_result = True
@@ -66,46 +70,53 @@ class ReceiptInfoFrame():
                 validate_result = False
             return validate_result
 
-
         def invalid_date():
             date_box['bg'] = 'tomato'
 
-
-        validate_cmd = self.gui.register(validate_date)
-        invalid_cmd = self.gui.register(invalid_date)
+        validate_cmd = self.frame.register(validate_date)
+        invalid_cmd = self.frame.register(invalid_date)
         date_box = tk.Entry(self.frame)
         date_box.grid(row=1, column=0)
-        date_box.insert(tk.END, read_date)  # バリデーション前に入力して初期値についてもチェックする
+        date_box.insert(tk.END, payment_date)  # バリデーション前に入力して初期値についてもチェックする
         date_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         date_box['validatecommand'] = (validate_cmd, '%s')  # %s : 入力されている値
         date_box['validate'] = 'focus'
         date_box['invalidcommand'] = (invalid_cmd)
 
-
-        shop = ttk.Combobox(self.frame)
-        shop['values'] = self.shop_list
-        shop.grid(row=1, column=1)
+        shop_var = ttk.Combobox(self.frame)
+        shop_var['values'] = self.shop_list
+        shop_var.grid(row=1, column=1)
 
         tax_var = tk.IntVar()
-        tax_var.set(tax_excluded)
+        tax_var.set(tax_ex_flg)
         tax_in = ttk.Radiobutton(self.frame, text='内税', value=0, variable=tax_var)
         tax_ex = ttk.Radiobutton(self.frame, text='外税', value=1, variable=tax_var)
         tax_in.grid(row=1, column=2)
         tax_ex.grid(row=1, column=3)
 
-        return date_box, shop, tax_var
+        return date_box, shop_var, tax_var
+
+
+    def make_places_info(self, date_place, shop_place, tax_place):
+        info_places = {}
+        name_list = ['date', 'shop', 'tax']
+        place_list = [date_place, shop_place, tax_place]
+        for name, place in zip(name_list, place_list):
+            info_places[name] = place
+        return info_places
 
 
 class ImgFrame():
     def __init__(self, frame, width, height, input_file):
         self.width = width
         self.height = height
-        self.show_img(frame, input_file)
+        self.frame = frame
+        self.show_img(input_file)
 
 
-    def show_img(self, frame, input_file):
+    def show_img(self, input_file):
         global img
-        canvas = tk.Canvas(frame, bg='black', width = self.width, height = self.height)
+        canvas = tk.Canvas(self.frame, bg='black', width = self.width, height = self.height)
         img = Image.open(input_file)
         resize_input_file = resize_img(input_file, self.width, self.height)
 
@@ -115,23 +126,21 @@ class ImgFrame():
 
 
 class ItemFrame():
-    major_category_list = ['食費', '光熱費']  # todo: DBから引っ張るようにする
-    medium_category_list = ['野菜', '米']  # todo: DBから引っ張るようにする
-    column_list = ['品目', '読み取り価格', '軽減税率', '税込価格', '大項目', '中項目', '付帯費', '付帯費内容', '特別費', '必要行']
-    tax_rate = 1.1
-    reduced_tax_rate = 1.08
-
+    column_list = ['必要行', '品目', '読み取り価格', '軽減税率', '税込価格', '大項目', '中項目', '付帯費', '付帯費内容', '特別費']
+    major_category_list = config.major_category_list
+    medium_category_list = config.medium_category_list
         
-    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place, page2, gui):
-        self.num_item = len(read_price)
+    def __init__(self, frame, ocr_result, tax_place):
         self.frame = frame
-        self.page2 = page2
-        self.gui = gui
+        self.item = ocr_result['item']
+        self.price = ocr_result['price']
+        self.reduced_tax_rate_flg = ocr_result['reduced_tax_rate_flg']
+        self.tax_ex_flg = ocr_result['tax_excluded_flg']
+        self.num_item = len(self.item)
         self.show_item_column()
-        self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place, self.required_place \
-            = self.get_item_value_list(read_item, read_price, read_reduced_tax_rate_flg)
-        self.show_price_tax_in(read_price, read_reduced_tax_rate_flg, read_tax_excluded)
-        self.show_button_recalculation(self.price_place, self.reduced_tax_rate_place, tax_place)
+        self.item_places = self.get_place_items(self.item, self.price, self.reduced_tax_rate_flg)
+        self.show_price_tax_in(self.price, self.reduced_tax_rate_flg, self.tax_ex_flg)
+        self.show_button_recalculation(self.item_places, tax_place)
 
 
     def show_item_column(self):
@@ -151,10 +160,8 @@ class ItemFrame():
                 price_box['bg'] = 'black'
             return validate_result
 
-
         def price_invalid():
             price_box['bg'] = 'tomato'
-
 
         def required_validate():
             if required_flg_var.get():
@@ -169,180 +176,161 @@ class ItemFrame():
 
         row = row + 1
 
+        required_flg_var = tk.IntVar(value=1)
+        required_flg = ttk.Checkbutton(self.frame, variable=required_flg_var, command=required_validate)
+        required_flg.grid(row=row, column=0)
+
         item_box = tk.Entry(self.frame, width=25)
         item_box.insert(tk.END, item)
-        item_box.grid(row=row, column=0)
+        item_box.grid(row=row, column=1)
 
-        price_validate_cmd = self.gui.register(price_validate)
-        price_invalid_cmd = self.gui.register(price_invalid)
+        price_validate_cmd = self.frame.register(price_validate)
+        price_invalid_cmd = self.frame.register(price_invalid)
         price_box = tk.Entry(self.frame, width=5, justify=tk.RIGHT)
-        price_box.grid(row=row, column=1)
+        price_box.grid(row=row, column=2)
         price_box.insert(tk.END, price)  # バリデーション前に入力して初期値についてもチェックする
         price_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         price_box['validatecommand'] = (price_validate_cmd, '%s')  # %s : 入力されている値
         price_box['validate'] = 'focus'
         price_box['invalidcommand'] = (price_invalid_cmd)
-        
 
         reduced_tax_rate_flg_var = tk.IntVar(value=reduced_tax_rate_flg)
         reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=reduced_tax_rate_flg_var)
-        reduced_tax_rate_flg.grid(row=row, column=2)
+        reduced_tax_rate_flg.grid(row=row, column=3)
 
         major_category = ttk.Combobox(self.frame, width=12)
         major_category['values'] = self.major_category_list
-        major_category.grid(row=row, column=4)
+        major_category.grid(row=row, column=5)  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
 
         medium_category = ttk.Combobox(self.frame, width=12)
         medium_category['values'] = self.medium_category_list
-        medium_category.grid(row=row, column=5)
+        medium_category.grid(row=row, column=6)
 
         extra_cost = tk.Entry(self.frame, width=5)
         extra_cost.insert(tk.END, '')
-        extra_cost.grid(row=row, column=6)
+        extra_cost.grid(row=row, column=7)
 
         extra_cost_detail = tk.Entry(self.frame, width=7)
         extra_cost_detail.insert(tk.END, '')
-        extra_cost_detail.grid(row=row, column=7)
+        extra_cost_detail.grid(row=row, column=8)
 
         special_cost = ttk.Checkbutton(self.frame)
-        special_cost.grid(row=row, column=8)
-
-        required_flg_var = tk.IntVar(value=1)
-        required_flg = ttk.Checkbutton(self.frame, variable=required_flg_var, command=required_validate)
-        required_flg.grid(row=row, column=9)
+        special_cost.grid(row=row, column=9)
 
         return item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var
 
 
-    def get_item_value_list(self, item_list, price_list, reduced_tax_rate_flg_list):
-        item_place = []
-        price_place = []
-        reduced_tax_rate_place = []
-        major_category_place = []
-        medium_category_place = []
-        required_place = []
+    def get_place_items(self, item_list, price_list, reduced_tax_rate_flg_list):
+        item_places = {}
+        item_places['item'] = []
+        item_places['price'] = []
+        item_places['reduced_tax_rate'] = []
+        item_places['major_category'] = []
+        item_places['medium_category'] = []
+        item_places['required'] = []
         for row, (item, price, reduced_tax_rate_flg) in enumerate(zip(item_list, price_list, reduced_tax_rate_flg_list)):
             item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var \
                 = self.show_item_value(item, price, reduced_tax_rate_flg, row)
-            item_place.append(item_box)
-            price_place.append(price_box)
-            reduced_tax_rate_place.append(reduced_tax_rate_flg_var)
-            major_category_place.append(major_category)
-            medium_category_place.append(medium_category)
-            required_place.append(required_flg_var)
-        return item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place
+            item_places['item'].append(item_box)
+            item_places['price'].append(price_box)
+            item_places['reduced_tax_rate'].append(reduced_tax_rate_flg_var)
+            item_places['major_category'].append(major_category)
+            item_places['medium_category'].append(medium_category)
+            item_places['required'].append(required_flg_var)
+        return item_places
 
 
-    def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):
-        def calc_price_tax_in():
-            trans_price_list = []
-            for price in price_list:
-                try:
-                    price = int(price)
-                except ValueError:  # 金額を数値として読み取れていない（アルファベット等として認識）場合はいったん0円とする
-                    price = 0
-                trans_price_list.append(price)
-
-            price_tax_in_list = []
-            if tax_excluded_list:
-                for row, (price, reduced_tax_rate_flg) in enumerate(zip(trans_price_list, reduced_tax_rate_flg_list)):
-                    row = row + 1
-                    tax = self.reduced_tax_rate if reduced_tax_rate_flg else self.tax_rate
-                    price_tax_in_list.append(int(price * tax))  # 税込にして端数が出た場合は切り捨てとして扱う
-            else:
-                price_tax_in_list = trans_price_list
-            return price_tax_in_list
-
-        
+    def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):        
         def show_item_prices_tax_in(price_tax_in_list):
             for row, price_tax_in in enumerate(price_tax_in_list):
                 row = row + 1
                 price_label = tk.Label(self.frame, text=price_tax_in, justify=tk.RIGHT)
-                price_label.grid(row=row, column=3, sticky=tk.E, ipadx=20)
-            
+                price_label.grid(row=row, column=4, sticky=tk.E, ipadx=20)
 
-        def show_sum_price_tax_in(price_tax_in_list):
+        def show_sum_price_tax_in(sum_price):
             blank_row_label = tk.Label(self.frame)
-            blank_row_label.grid(row=self.num_item+2,column=3)
+            blank_row_label.grid(row=self.num_item+1,column=3)
 
-            sum_price_str_labal = tk.Label(self.frame, text='税込価格合計')
-            sum_price_str_labal.grid(row=self.num_item+3,column=1, columnspan=2, sticky=tk.E)
+            sum_price_str_labal = tk.Label(self.frame, text='合計額')
+            sum_price_str_labal.grid(row=self.num_item+2,column=2, columnspan=2, sticky=tk.E)
             
-            required = list(map(lambda x: x.get(), self.required_place))
-            required_price_tax_in = [p for p, r in zip(price_tax_in_list, required) if r==1]
-            sum_price = sum(required_price_tax_in)
             price_sum_labal = tk.Label(self.frame, text=sum_price)
-            price_sum_labal.grid(row=self.num_item+3,column=3, sticky=tk.E, ipadx=20)
+            price_sum_labal.grid(row=self.num_item+2, column=4, sticky=tk.E, ipadx=20)
 
-
-        price_tax_in_list = calc_price_tax_in()
+        price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list)
+        sum_price = calc_sum_price(price_tax_in_list, self.item_places['required'])
         show_item_prices_tax_in(price_tax_in_list)
-        show_sum_price_tax_in(price_tax_in_list)
+        show_sum_price_tax_in(sum_price)
 
 
-    def show_button_recalculation(self, price_place, reduced_tax_rate_place, tax_place):
+    def show_button_recalculation(self, item_places, tax_place):
         def recalc():
-            price = list(map(lambda x: x.get(), price_place))
-            reduced_tax_rate_flg = list(map(lambda x: x.get(), reduced_tax_rate_place))
+            price = list(map(lambda x: x.get(), item_places['price']))
+            reduced_tax_rate_flg = list(map(lambda x: x.get(), item_places['reduced_tax_rate']))
             tax_excluded = tax_place.get()
             self.show_price_tax_in(price, reduced_tax_rate_flg, tax_excluded)
         
         calc_button = ttk.Button(self.frame, text='再計算', command=recalc)
-        calc_button.grid(row=self.num_item+4, column=3, sticky=tk.E)
+        calc_button.grid(row=self.num_item+3, column=3, rowspan=2, columnspan=2, sticky=tk.E, ipadx=20)
 
 
 class OperationFrame():
-    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, required_place, gui, input_file, receipt_no):
+    def __init__(self, frame, info_places, item_places, gui, input_file):
         self.frame = frame
-        self.date_place = date_place
-        self.shop_place = shop_place
-        self.item_place = item_place
-        self.price_place = price_place
-        self.major_category_place = major_category_place
-        self.medium_category_place = medium_category_place
-        self.required_place = required_place
-        self.show_button_change_page(gui, input_file, receipt_no)
+        self.gui = gui
+        self.info_places = info_places
+        self.item_places = item_places
+        self.receipt_no = gui.input_path_list.index(input_file)
+        self.num_receipts = len(gui.input_path_list)
+        self.show_button_next_receipt()
 
 
-    def show_button_change_page(self, gui, input_file, input_path_list):
+    def write_modified_result(self):
+        date = self.info_places['date'].get()
+        shop = self.info_places['shop'].get()
+        today = datetime.datetime.now().strftime('%Y%m%d')
+        csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
+        with open(csv_path, mode='a') as file:
+            required = self.item_places['required']
+            index_required = [i for i, r in enumerate(required) if r.get()==1]
+            for i in index_required:
+                item = self.item_places['item'][i].get()
+                price = self.item_places['price'][i].get()
+                major_category = self.item_places['major_category'][i].get()
+                medium_category = self.item_places['medium_category'][i].get()
+                row = [date, item, price, major_category, medium_category, shop]
+                csv.writer(file).writerow(row)
+
+
+    def next_receipt(self):
+        self.gui.change_page()
+        next_receipt_no = self.receipt_no + 1
+        next_input_file = self.gui.input_path_list[next_receipt_no]
+        next_ocr_result = self.gui.ocr_results[next_input_file]
+        main(next_ocr_result, next_input_file, self.gui.next_page, self.gui)
+
+
+    def show_button_next_receipt(self):
         def next_step():
-            def write_modified_result():
-                date = self.date_place.get()
-                shop = self.shop_place.get()
-                today = datetime.datetime.now().strftime('%Y%m%d')
-                csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
-                with open(csv_path, mode='a') as file:
-                    for item, price, major_category, medium_category, required \
-                         in zip(self.item_place, self.price_place, self.major_category_place, self.medium_category_place, self.required_place):
-                        if required.get() == 1:
-                            row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop] 
-                            csv.writer(file).writerow(row)
-            
-            write_modified_result()
-            if receipt_no + 1 < num_receipts:
-                MakePages.next_receipt(gui, receipt_no)
+            self.write_modified_result()
+            if self.receipt_no + 1 < self.num_receipts:
+                self.next_receipt()
             else:
-                MakePages.last_page(gui)
+                show_last_page(self.gui)
 
-        receipt_no = input_path_list.index(input_file)
-        num_receipts = len(input_path_list)
-        button_text = '次のレシートへ →' if receipt_no + 1 < num_receipts else '修正完了'
+        button_text = '次のレシートへ →' if self.receipt_no + 1 < self.num_receipts else '修正完了'
         change_page_button = tk.Button(self.frame, text=button_text, command=next_step)
         change_page_button.pack(ipadx=100, ipady=15)
 
 
-def main(ocr_result, input_file, page2, gui, input_path_list):
-    read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
-    page2 = DivideScreen(page2)
-    receipt_info_frame = ReceiptInfoFrame(page2.receipt_info_frame, read_date, tax_excluded, page2, gui)
-    date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
-    img_frame = ImgFrame(page2.img_frame, page2.img_width, page2.height, input_file)
-    item_frame = ItemFrame(page2.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place, page2, gui)
-
-    item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place \
-        = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place, item_frame.required_place
-    
-    operation_frame = OperationFrame(page2.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, required_place, gui, input_file, input_path_list)
+def main(ocr_result, input_file, page, gui):
+    page = DivideScreen(page)
+    receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, ocr_result)
+    info_places = receipt_info_frame.info_places
+    ImgFrame(page.img_frame, page.img_width, page.height, input_file)
+    item_frame = ItemFrame(page.item_frame, ocr_result, info_places['tax'])
+    item_places = item_frame.item_places
+    OperationFrame(page.operation_frame, info_places, item_places, gui, input_file)
 
 
 if __name__ == '__main__':
