@@ -1,6 +1,7 @@
 import pyocr
 import pyocr.builders
 import re
+import time
 from datetime import datetime
 from PIL import Image
 
@@ -78,10 +79,16 @@ class OcrReceipt:
         return tax_excluded
 
 
+def indicate_processing_status(no, num):
+    proccess_per = round(no / num * 100, 0)
+    print('\r', '処理状況: ', proccess_per, '%', end='')
+    time.sleep(0.1)
+
+
 def main():
     input_path_list = get_input_path_list('../img/interim/each_receipt', 'png')
     ocr_results = {}
-    for input_file in input_path_list:
+    for i, input_file in enumerate(input_path_list):
         ocr = OcrReceipt(input_file)
         result = {}
         result['payment_date'] = ocr.payment_date
@@ -90,6 +97,7 @@ def main():
         result['reduced_tax_rate_flg'] = ocr.reduced_tax_rate_flg
         result['tax_excluded_flg'] = ocr.tax_excluded
         ocr_results[input_file] = result
+        indicate_processing_status(i, len(input_path_list))
     return ocr_results
 
 if __name__ == '__main__':
