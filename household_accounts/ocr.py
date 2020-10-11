@@ -90,8 +90,9 @@ def summing_up_ocr_results(ocr):
 
 
 def indicate_processing_status(no, num):
-    proccess_per = round(no / num * 100, 0)
-    print('\r', '処理状況: ', proccess_per, '%', end='')
+    process_per = round(no / num * 100, 0)
+    process_bar = ('=' * no) + (' ' * (num - no))
+    print('\r処理状況: [{}] {}%'.format(process_bar, process_per), end='')
     time.sleep(0.1)
 
 
