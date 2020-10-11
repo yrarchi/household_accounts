@@ -94,6 +94,7 @@ class OcrReceipt:
     def modify_price(self, price):
         for before, after in zip(self.conversion_num_before, self.conversion_num_after):
             price = [re.sub(before, after, p) for p in price]
+        price = [re.sub(r'([A-Z]|[a-z])', r'', p) for p in price]
         return price
 
 
