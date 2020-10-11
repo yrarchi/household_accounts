@@ -1,7 +1,8 @@
-from PIL import Image
 import pyocr
 import pyocr.builders
 import re
+from datetime import datetime
+from PIL import Image
 
 from get_file_path_list import get_input_path_list
 
@@ -42,8 +43,9 @@ class OcrReceipt:
 
     def get_payment_date(self, receipt_content):
         payment_date = [re.search(self.date_regex, s).group() for s in receipt_content if re.search(self.date_regex+r'(\(|日)', s)]
-        payment_date = payment_date if payment_date != [] else '0000/00/00'
-        payment_date = re.sub(r'(年|月)', r'/', payment_date[0])
+        payment_date = payment_date[0] if payment_date != [] else '0000/00/00'
+        payment_date = re.sub(r'(年|月)', r'/', payment_date)
+        payment_date = datetime.strptime(payment_date, '%Y/%m/%d').strftime('%Y/%m/%d')
         return payment_date
 
 
