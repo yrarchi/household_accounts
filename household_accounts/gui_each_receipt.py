@@ -49,7 +49,8 @@ class ReceiptInfoFrame():
     def __init__(self, frame, read_date, tax_excluded):
         self.frame = frame
         self.show_info_column()
-        self.date_box, self.shop, self.tax_var = self.show_info_value(read_date, tax_excluded)
+        date_place, shop_place, tax_place = self.show_info_value(read_date, tax_excluded)
+        self.info_places = self.make_places_info(date_place, shop_place, tax_place)
 
 
     def show_info_column(self):
@@ -82,9 +83,9 @@ class ReceiptInfoFrame():
         date_box['validate'] = 'focus'
         date_box['invalidcommand'] = (invalid_cmd)
 
-        shop = ttk.Combobox(self.frame)
-        shop['values'] = self.shop_list
-        shop.grid(row=1, column=1)
+        shop_var = ttk.Combobox(self.frame)
+        shop_var['values'] = self.shop_list
+        shop_var.grid(row=1, column=1)
 
         tax_var = tk.IntVar()
         tax_var.set(tax_excluded)
@@ -93,7 +94,16 @@ class ReceiptInfoFrame():
         tax_in.grid(row=1, column=2)
         tax_ex.grid(row=1, column=3)
 
-        return date_box, shop, tax_var
+        return date_box, shop_var, tax_var
+
+
+    def make_places_info(self, date_place, shop_place, tax_place):
+        info_places = {}
+        name_list = ["date", "shop", "tax"]
+        place_list = [date_place, shop_place, tax_place]
+        for name, place in zip(name_list, place_list):
+            info_places[name] = place
+        return info_places
 
 
 class ImgFrame():
@@ -127,10 +137,9 @@ class ItemFrame():
         self.num_item = len(read_price)
         self.frame = frame
         self.show_item_column()
-        self.item_place, self.price_place, self.reduced_tax_rate_place, self.major_category_place, self.medium_category_place, self.required_place \
-            = self.get_item_place_list(read_item, read_price, read_reduced_tax_rate_flg)
+        self.item_places = self.get_place_items(read_item, read_price, read_reduced_tax_rate_flg)
         self.show_price_tax_in(read_price, read_reduced_tax_rate_flg, read_tax_excluded)
-        self.show_button_recalculation(self.price_place, self.reduced_tax_rate_place, tax_place)
+        self.show_button_recalculation(self.item_places, tax_place)
 
 
     def show_item_column(self):
@@ -212,23 +221,24 @@ class ItemFrame():
         return item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var
 
 
-    def get_item_place_list(self, item_list, price_list, reduced_tax_rate_flg_list):
-        item_place = []
-        price_place = []
-        reduced_tax_rate_place = []
-        major_category_place = []
-        medium_category_place = []
-        required_place = []
+    def get_place_items(self, item_list, price_list, reduced_tax_rate_flg_list):
+        item_places = {}
+        item_places["item"] = []
+        item_places["price"] = []
+        item_places["reduced_tax_rate"] = []
+        item_places["major_category"] = []
+        item_places["medium_category"] = []
+        item_places["required"] = []
         for row, (item, price, reduced_tax_rate_flg) in enumerate(zip(item_list, price_list, reduced_tax_rate_flg_list)):
             item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var \
                 = self.show_item_value(item, price, reduced_tax_rate_flg, row)
-            item_place.append(item_box)
-            price_place.append(price_box)
-            reduced_tax_rate_place.append(reduced_tax_rate_flg_var)
-            major_category_place.append(major_category)
-            medium_category_place.append(medium_category)
-            required_place.append(required_flg_var)
-        return item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place
+            item_places["item"].append(item_box)
+            item_places["price"].append(price_box)
+            item_places["reduced_tax_rate"].append(reduced_tax_rate_flg_var)
+            item_places["major_category"].append(major_category)
+            item_places["medium_category"].append(medium_category)
+            item_places["required"].append(required_flg_var)
+        return item_places
 
 
     def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):        
@@ -251,15 +261,15 @@ class ItemFrame():
 
 
         price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list, self.tax_rate, self.reduced_tax_rate)
-        sum_price = calc_sum_price(price_tax_in_list, self.required_place)
+        sum_price = calc_sum_price(price_tax_in_list, self.item_places["required"])
         show_item_prices_tax_in(price_tax_in_list)
         show_sum_price_tax_in(sum_price)
 
 
-    def show_button_recalculation(self, price_place, reduced_tax_rate_place, tax_place):
+    def show_button_recalculation(self, item_places, tax_place):
         def recalc():
-            price = list(map(lambda x: x.get(), price_place))
-            reduced_tax_rate_flg = list(map(lambda x: x.get(), reduced_tax_rate_place))
+            price = list(map(lambda x: x.get(), item_places["price"]))
+            reduced_tax_rate_flg = list(map(lambda x: x.get(), item_places["reduced_tax_rate"]))
             tax_excluded = tax_place.get()
             self.show_price_tax_in(price, reduced_tax_rate_flg, tax_excluded)
         
@@ -268,15 +278,15 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, required_place, gui, input_file, receipt_no):
+    def __init__(self, frame, place, item_places, gui, input_file, receipt_no):
         self.frame = frame
-        self.date_place = date_place
-        self.shop_place = shop_place
-        self.item_place = item_place
-        self.price_place = price_place
-        self.major_category_place = major_category_place
-        self.medium_category_place = medium_category_place
-        self.required_place = required_place
+        self.date_place = place["date"]
+        self.shop_place = place["shop"]
+        self.item_place = item_places["item"]
+        self.price_place = item_places["price"]
+        self.major_category_place = item_places["major_category"]
+        self.medium_category_place = item_places["medium_category"]
+        self.required_place = item_places["required"]
         self.show_button_change_page(gui, input_file, receipt_no)
 
 
@@ -311,14 +321,11 @@ def main(ocr_result, input_file, page, gui, input_path_list):
     read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
     page = DivideScreen(page)
     receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, read_date, tax_excluded)
-    date_place, shop_place, tax_place = receipt_info_frame.date_box, receipt_info_frame.shop, receipt_info_frame.tax_var
+    info_places = receipt_info_frame.info_places
     img_frame = ImgFrame(page.img_frame, page.img_width, page.height, input_file)
-    item_frame = ItemFrame(page.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, tax_place)
-
-    item_place, price_place, reduced_tax_rate_place, major_category_place, medium_category_place, required_place \
-        = item_frame.item_place, item_frame.price_place, item_frame.reduced_tax_rate_place, item_frame.major_category_place, item_frame.medium_category_place, item_frame.required_place
-    
-    operation_frame = OperationFrame(page.operation_frame, date_place, shop_place, item_place, price_place, major_category_place, medium_category_place, required_place, gui, input_file, input_path_list)
+    item_frame = ItemFrame(page.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, info_places["tax"])
+    item_places = item_frame.item_places
+    operation_frame = OperationFrame(page.operation_frame, info_places, item_places, gui, input_file, input_path_list)
 
 
 if __name__ == '__main__':
