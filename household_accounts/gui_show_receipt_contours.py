@@ -1,5 +1,4 @@
 import tkinter as tk
-from PIL import Image
 
 import config
 import gui_each_receipt
