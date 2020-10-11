@@ -8,8 +8,8 @@ from PIL import Image
 
 import config
 from calc import calc_price_tax_in, calc_sum_price
+from gui_last_page import show_last_page
 from resize_image import resize_img
-from gui_make_pages import MakePages
 
 
 class DivideScreen():
@@ -278,19 +278,19 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, place, item_places, gui, input_file, receipt_no):
+    def __init__(self, frame, info_place, item_places, gui, input_file):
         self.frame = frame
-        self.date_place = place["date"]
-        self.shop_place = place["shop"]
+        self.date_place = info_place["date"]
+        self.shop_place = info_place["shop"]
         self.item_place = item_places["item"]
         self.price_place = item_places["price"]
         self.major_category_place = item_places["major_category"]
         self.medium_category_place = item_places["medium_category"]
         self.required_place = item_places["required"]
-        self.show_button_change_page(gui, input_file, receipt_no)
+        self.show_button_change_page(gui, input_file)
 
 
-    def show_button_change_page(self, gui, input_file, input_path_list):
+    def show_button_change_page(self, gui, input_file):
         def next_step():
             def write_modified_result():
                 date = self.date_place.get()
@@ -304,20 +304,29 @@ class OperationFrame():
                             row = [date, item.get(), price.get(), major_category.get(), medium_category.get(), shop] 
                             csv.writer(file).writerow(row)
             
+
+            def next_receipt():
+                gui.change_page()
+                next_receipt_no = receipt_no + 1
+                next_input_file = gui.input_path_list[next_receipt_no]
+                next_ocr_result = gui.ocr_results[next_input_file]
+                main(next_ocr_result, next_input_file, gui.next_page, gui)
+
+                
             write_modified_result()
             if receipt_no + 1 < num_receipts:
-                MakePages.next_receipt(gui, receipt_no)
+                next_receipt()
             else:
-                MakePages.last_page(gui)
+                show_last_page(gui)
 
-        receipt_no = input_path_list.index(input_file)
-        num_receipts = len(input_path_list)
+        receipt_no = gui.input_path_list.index(input_file)
+        num_receipts = len(gui.input_path_list)
         button_text = '次のレシートへ →' if receipt_no + 1 < num_receipts else '修正完了'
         change_page_button = tk.Button(self.frame, text=button_text, command=next_step)
         change_page_button.pack(ipadx=100, ipady=15)
 
 
-def main(ocr_result, input_file, page, gui, input_path_list):
+def main(ocr_result, input_file, page, gui):
     read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
     page = DivideScreen(page)
     receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, read_date, tax_excluded)
@@ -325,7 +334,7 @@ def main(ocr_result, input_file, page, gui, input_path_list):
     img_frame = ImgFrame(page.img_frame, page.img_width, page.height, input_file)
     item_frame = ItemFrame(page.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, info_places["tax"])
     item_places = item_frame.item_places
-    operation_frame = OperationFrame(page.operation_frame, info_places, item_places, gui, input_file, input_path_list)
+    operation_frame = OperationFrame(page.operation_frame, info_places, item_places, gui, input_file)
 
 
 if __name__ == '__main__':
