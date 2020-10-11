@@ -48,8 +48,8 @@ class ReceiptInfoFrame():
 
     def __init__(self, frame, ocr_result):
         self.frame = frame
-        self.payment_date = ocr_result["payment_date"]
-        self.tax_ex_flg = ocr_result["tax_excluded_flg"]
+        self.payment_date = ocr_result['payment_date']
+        self.tax_ex_flg = ocr_result['tax_excluded_flg']
         self.show_info_column()
         date_place, shop_place, tax_place = self.show_info_value(self.payment_date, self.tax_ex_flg)
         self.info_places = self.make_places_info(date_place, shop_place, tax_place)
@@ -99,7 +99,7 @@ class ReceiptInfoFrame():
 
     def make_places_info(self, date_place, shop_place, tax_place):
         info_places = {}
-        name_list = ["date", "shop", "tax"]
+        name_list = ['date', 'shop', 'tax']
         place_list = [date_place, shop_place, tax_place]
         for name, place in zip(name_list, place_list):
             info_places[name] = place
@@ -132,10 +132,10 @@ class ItemFrame():
         
     def __init__(self, frame, ocr_result, tax_place):
         self.frame = frame
-        self.item = ocr_result["item"]
-        self.price = ocr_result["price"]
-        self.reduced_tax_rate_flg = ocr_result["reduced_tax_rate_flg"]
-        self.tax_ex_flg = ocr_result["tax_excluded_flg"]
+        self.item = ocr_result['item']
+        self.price = ocr_result['price']
+        self.reduced_tax_rate_flg = ocr_result['reduced_tax_rate_flg']
+        self.tax_ex_flg = ocr_result['tax_excluded_flg']
         self.num_item = len(self.item)
         self.show_item_column()
         self.item_places = self.get_place_items(self.item, self.price, self.reduced_tax_rate_flg)
@@ -222,21 +222,21 @@ class ItemFrame():
 
     def get_place_items(self, item_list, price_list, reduced_tax_rate_flg_list):
         item_places = {}
-        item_places["item"] = []
-        item_places["price"] = []
-        item_places["reduced_tax_rate"] = []
-        item_places["major_category"] = []
-        item_places["medium_category"] = []
-        item_places["required"] = []
+        item_places['item'] = []
+        item_places['price'] = []
+        item_places['reduced_tax_rate'] = []
+        item_places['major_category'] = []
+        item_places['medium_category'] = []
+        item_places['required'] = []
         for row, (item, price, reduced_tax_rate_flg) in enumerate(zip(item_list, price_list, reduced_tax_rate_flg_list)):
             item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var \
                 = self.show_item_value(item, price, reduced_tax_rate_flg, row)
-            item_places["item"].append(item_box)
-            item_places["price"].append(price_box)
-            item_places["reduced_tax_rate"].append(reduced_tax_rate_flg_var)
-            item_places["major_category"].append(major_category)
-            item_places["medium_category"].append(medium_category)
-            item_places["required"].append(required_flg_var)
+            item_places['item'].append(item_box)
+            item_places['price'].append(price_box)
+            item_places['reduced_tax_rate'].append(reduced_tax_rate_flg_var)
+            item_places['major_category'].append(major_category)
+            item_places['medium_category'].append(medium_category)
+            item_places['required'].append(required_flg_var)
         return item_places
 
 
@@ -258,15 +258,15 @@ class ItemFrame():
             price_sum_labal.grid(row=self.num_item+2, column=4, sticky=tk.E, ipadx=20)
 
         price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list)
-        sum_price = calc_sum_price(price_tax_in_list, self.item_places["required"])
+        sum_price = calc_sum_price(price_tax_in_list, self.item_places['required'])
         show_item_prices_tax_in(price_tax_in_list)
         show_sum_price_tax_in(sum_price)
 
 
     def show_button_recalculation(self, item_places, tax_place):
         def recalc():
-            price = list(map(lambda x: x.get(), item_places["price"]))
-            reduced_tax_rate_flg = list(map(lambda x: x.get(), item_places["reduced_tax_rate"]))
+            price = list(map(lambda x: x.get(), item_places['price']))
+            reduced_tax_rate_flg = list(map(lambda x: x.get(), item_places['reduced_tax_rate']))
             tax_excluded = tax_place.get()
             self.show_price_tax_in(price, reduced_tax_rate_flg, tax_excluded)
         
@@ -286,18 +286,18 @@ class OperationFrame():
 
 
     def write_modified_result(self):
-        date = self.info_places["date"].get()
-        shop = self.info_places["shop"].get()
+        date = self.info_places['date'].get()
+        shop = self.info_places['shop'].get()
         today = datetime.datetime.now().strftime('%Y%m%d')
         csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
         with open(csv_path, mode='a') as file:
-            required = self.item_places["required"]
+            required = self.item_places['required']
             index_required = [i for i, r in enumerate(required) if r.get()==1]
             for i in index_required:
-                item = self.item_places["item"][i].get()
-                price = self.item_places["price"][i].get()
-                major_category = self.item_places["major_category"][i].get()
-                medium_category = self.item_places["medium_category"][i].get()
+                item = self.item_places['item'][i].get()
+                price = self.item_places['price'][i].get()
+                major_category = self.item_places['major_category'][i].get()
+                medium_category = self.item_places['medium_category'][i].get()
                 row = [date, item, price, major_category, medium_category, shop]
                 csv.writer(file).writerow(row)
 
@@ -328,7 +328,7 @@ def main(ocr_result, input_file, page, gui):
     receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, ocr_result)
     info_places = receipt_info_frame.info_places
     ImgFrame(page.img_frame, page.img_width, page.height, input_file)
-    item_frame = ItemFrame(page.item_frame, ocr_result, info_places["tax"])
+    item_frame = ItemFrame(page.item_frame, ocr_result, info_places['tax'])
     item_places = item_frame.item_places
     OperationFrame(page.operation_frame, info_places, item_places, gui, input_file)
 
