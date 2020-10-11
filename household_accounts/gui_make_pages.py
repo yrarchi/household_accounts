@@ -4,15 +4,16 @@ import os
 import tkinter as tk
 
 import config
+from get_file_path_list import get_input_path_list
 
 
 class MakeGuiScreen(tk.Tk):
     width = config.width
     height = config.height
 
-    def __init__(self, input_path_list, ocr_results):
+    def __init__(self, ocr_results):
         super().__init__()
-        self.input_path_list = input_path_list
+        self.input_path_list = get_input_path_list(relative_path='../img/interim/each_receipt', extension='png')
         self.ocr_results = ocr_results
         self.make_screen()
         self.make_first_page()

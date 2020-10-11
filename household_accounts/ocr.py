@@ -4,6 +4,8 @@ import pyocr
 import pyocr.builders
 import re
 
+from get_file_path_list import get_input_path_list
+
 
 class OcrReceipt:
     date_regex = r'.{4}(/|年).{1,2}(/|月)[0-9]{1,2}'
@@ -75,12 +77,13 @@ class OcrReceipt:
         return tax_excluded
 
 
-def main(input_path_list):
-    ocr_result = {}
+def main():
+    input_path_list = get_input_path_list(relative_path='../img/interim/each_receipt', extension='png')
+    ocr_results = {}
     for input_file in input_path_list:
         ocr = OcrReceipt(input_file)
-        ocr_result[input_file] = [ocr.payment_date, ocr.item, ocr.price, ocr.reduced_tax_rate_flg, ocr.tax_excluded]
-    return ocr_result
+        ocr_results[input_file] = [ocr.payment_date, ocr.item, ocr.price, ocr.reduced_tax_rate_flg, ocr.tax_excluded]
+    return ocr_results
 
 if __name__ == '__main__':
     main()
