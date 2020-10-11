@@ -20,7 +20,7 @@ class MakeGuiScreen(tk.Tk):
 
 
     def make_screen(self):
-        self.title('読み取り内容修正')
+        self.title('レシート整理')
         self.geometry('{}x{}'.format(self.width, self.height))
 
 
