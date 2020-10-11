@@ -13,7 +13,7 @@ class OcrReceipt:
     total_regex = r'(合計|小計|ノヽ言十|消費税).*[0-9]*'
     item_price_regex = r'([0-9]|\*|＊|※|[a-z]|[A-Z])\Z'  # 末尾が数字か軽減税率の記号かアルファベット（数字が読み取れていない場合用）
     price_regex = r'([0-9]|[a-z]|[A-Z])*\Z'  # アルファベットは数値が誤って変換されていることがあるため
-    reduced_tax_regex = r'(\*|＊|※)'
+    reduced_tax_regex = r'(\*|＊|※|W|w)'
     top_num_regex = r'^[0-9]*'
     tax_ex_regex = r'外税'
     tax_in_regex = r'(内税|内消費税等)'
