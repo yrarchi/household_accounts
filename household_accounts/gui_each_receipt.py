@@ -46,10 +46,12 @@ class ReceiptInfoFrame():
     column_list = ['日付', '店舗', '内税/外税']
     shop_list = config.shop_list
 
-    def __init__(self, frame, read_date, tax_excluded):
+    def __init__(self, frame, ocr_result):
         self.frame = frame
+        self.payment_date = ocr_result["payment_date"]
+        self.tax_ex_flg = ocr_result["tax_excluded_flg"]
         self.show_info_column()
-        date_place, shop_place, tax_place = self.show_info_value(read_date, tax_excluded)
+        date_place, shop_place, tax_place = self.show_info_value(self.payment_date, self.tax_ex_flg)
         self.info_places = self.make_places_info(date_place, shop_place, tax_place)
 
 
@@ -59,7 +61,7 @@ class ReceiptInfoFrame():
             date_label.grid(row=0, column=column)
 
 
-    def show_info_value(self, read_date, tax_excluded):
+    def show_info_value(self, payment_date, tax_ex_flg):
         def validate_date(value):
             if re.fullmatch(r'[0-9]{4}/[0-9]{2}/[0-9]{2}', value):
                 validate_result = True
@@ -77,7 +79,7 @@ class ReceiptInfoFrame():
         invalid_cmd = self.frame.register(invalid_date)
         date_box = tk.Entry(self.frame)
         date_box.grid(row=1, column=0)
-        date_box.insert(tk.END, read_date)  # バリデーション前に入力して初期値についてもチェックする
+        date_box.insert(tk.END, payment_date)  # バリデーション前に入力して初期値についてもチェックする
         date_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         date_box['validatecommand'] = (validate_cmd, '%s')  # %s : 入力されている値
         date_box['validate'] = 'focus'
@@ -88,7 +90,7 @@ class ReceiptInfoFrame():
         shop_var.grid(row=1, column=1)
 
         tax_var = tk.IntVar()
-        tax_var.set(tax_excluded)
+        tax_var.set(tax_ex_flg)
         tax_in = ttk.Radiobutton(self.frame, text='内税', value=0, variable=tax_var)
         tax_ex = ttk.Radiobutton(self.frame, text='外税', value=1, variable=tax_var)
         tax_in.grid(row=1, column=2)
@@ -130,12 +132,16 @@ class ItemFrame():
     major_category_list = config.major_category_list
     medium_category_list = config.medium_category_list
         
-    def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place):
-        self.num_item = len(read_price)
+    def __init__(self, frame, ocr_result, tax_place):
         self.frame = frame
+        self.item = ocr_result["item"]
+        self.price = ocr_result["price"]
+        self.reduced_tax_rate_flg = ocr_result["reduced_tax_rate_flg"]
+        self.tax_ex_flg = ocr_result["tax_excluded_flg"]
+        self.num_item = len(self.item)
         self.show_item_column()
-        self.item_places = self.get_place_items(read_item, read_price, read_reduced_tax_rate_flg)
-        self.show_price_tax_in(read_price, read_reduced_tax_rate_flg, read_tax_excluded)
+        self.item_places = self.get_place_items(self.item, self.price, self.reduced_tax_rate_flg)
+        self.show_price_tax_in(self.price, self.reduced_tax_rate_flg, self.tax_ex_flg)
         self.show_button_recalculation(self.item_places, tax_place)
 
 
@@ -324,14 +330,13 @@ class OperationFrame():
 
 
 def main(ocr_result, input_file, page, gui):
-    read_date, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded = [i for i in ocr_result]
     page = DivideScreen(page)
-    receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, read_date, tax_excluded)
+    receipt_info_frame = ReceiptInfoFrame(page.receipt_info_frame, ocr_result)
     info_places = receipt_info_frame.info_places
-    img_frame = ImgFrame(page.img_frame, page.img_width, page.height, input_file)
-    item_frame = ItemFrame(page.item_frame, read_item, read_price, read_reduced_tax_rate_flg, tax_excluded, info_places["tax"])
+    ImgFrame(page.img_frame, page.img_width, page.height, input_file)
+    item_frame = ItemFrame(page.item_frame, ocr_result, info_places["tax"])
     item_places = item_frame.item_places
-    operation_frame = OperationFrame(page.operation_frame, info_places, item_places, gui, input_file)
+    OperationFrame(page.operation_frame, info_places, item_places, gui, input_file)
 
 
 if __name__ == '__main__':

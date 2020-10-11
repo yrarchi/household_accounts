@@ -82,7 +82,13 @@ def main():
     ocr_results = {}
     for input_file in input_path_list:
         ocr = OcrReceipt(input_file)
-        ocr_results[input_file] = [ocr.payment_date, ocr.item, ocr.price, ocr.reduced_tax_rate_flg, ocr.tax_excluded]
+        result = {}
+        result["payment_date"] = ocr.payment_date
+        result["item"] = ocr.item
+        result["price"] = ocr.price
+        result["reduced_tax_rate_flg"] = ocr.reduced_tax_rate_flg
+        result["tax_excluded_flg"] = ocr.tax_excluded
+        ocr_results[input_file] = result
     return ocr_results
 
 if __name__ == '__main__':
