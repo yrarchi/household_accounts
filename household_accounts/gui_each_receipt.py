@@ -248,13 +248,13 @@ class ItemFrame():
 
         def show_sum_price_tax_in(sum_price):
             blank_row_label = tk.Label(self.frame)
-            blank_row_label.grid(row=self.num_item+2,column=3)
+            blank_row_label.grid(row=self.num_item+1,column=3)
 
             sum_price_str_labal = tk.Label(self.frame, text='合計額')
-            sum_price_str_labal.grid(row=self.num_item+3,column=2, columnspan=2, sticky=tk.E)
+            sum_price_str_labal.grid(row=self.num_item+2,column=2, columnspan=2, sticky=tk.E)
             
             price_sum_labal = tk.Label(self.frame, text=sum_price)
-            price_sum_labal.grid(row=self.num_item+3, column=4, sticky=tk.E, ipadx=20)
+            price_sum_labal.grid(row=self.num_item+2, column=4, sticky=tk.E, ipadx=20)
 
 
         price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list)
@@ -271,7 +271,7 @@ class ItemFrame():
             self.show_price_tax_in(price, reduced_tax_rate_flg, tax_excluded)
         
         calc_button = ttk.Button(self.frame, text='再計算', command=recalc)
-        calc_button.grid(row=self.num_item+4, column=4, sticky=tk.E)
+        calc_button.grid(row=self.num_item+3, column=3, rowspan=2, columnspan=2, sticky=tk.E, ipadx=20)
 
 
 class OperationFrame():
