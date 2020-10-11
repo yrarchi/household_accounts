@@ -22,8 +22,10 @@ class OcrReceipt:
         self.input_file = input_file
         receipt_content = self.ocr(self.input_file)
         self.payment_date = self.get_payment_date(receipt_content)
-        self.item, self.price, self.reduced_tax_rate_flg = self.get_item_price_reduced_tax_rate_flg(receipt_content)
         self.tax_excluded = self.get_tax_excluded_included(receipt_content)
+        main_contents = self.get_main_contents(receipt_content)
+        self.reduced_tax_rate_flg = self.get_reduced_tax_rate_flg(main_contents)
+        self.item, self.price = self.get_item_and_price(main_contents)
 
 
     def ocr(self, input_file):
@@ -50,7 +52,14 @@ class OcrReceipt:
         return payment_date
 
 
-    def get_item_price_reduced_tax_rate_flg(self, receipt_content):
+    def get_tax_excluded_included(self, receipt_content):
+        tax_excluded_flg = [1 for s in receipt_content if re.search(self.tax_ex_regex,s)]
+        tax_included_flg = [1 for s in receipt_content if re.search(self.tax_in_regex,s)]
+        tax_excluded = 1 if len(tax_excluded_flg)>len(tax_included_flg) else 0  # 外税判断の文字列が内税判断の文字列を超えた数存在すれば外税とする
+        return tax_excluded
+
+
+    def get_main_contents(self, receipt_content):
         try:
             start_low = [receipt_content.index(s) for s in receipt_content if re.search(self.date_regex, s)][0] + 1  # payment_dateの次の行が開始行とする
         except IndexError:
@@ -59,24 +68,23 @@ class OcrReceipt:
         sum_lows = [receipt_content.index(s) for s in receipt_content if re.search(self.total_regex, s)]
         end_low = sum_lows[0] if sum_lows != [] else len(receipt_content)
 
-        item_and_price = receipt_content[start_low:end_low]
-        item_and_price = [s for s in item_and_price if re.search(self.item_price_regex, s)]  
+        main_contents = receipt_content[start_low:end_low]
+        main_contents = [s for s in main_contents if re.search(self.item_price_regex, s)]  
+        return main_contents
 
-        reduced_tax_rate_flg = [1 if re.search(self.reduced_tax_regex, s) else 0 for s in item_and_price]
-        item_and_price = [re.sub(self.reduced_tax_regex, r'', s) for s in item_and_price]  # 軽減税率の判定終わったらその記号は取り除く
 
+    def get_reduced_tax_rate_flg(self, main_contents):
+        reduced_tax_rate_flg = [1 if re.search(self.reduced_tax_regex, s) else 0 for s in main_contents]
+        return reduced_tax_rate_flg
+
+
+    def get_item_and_price(self, main_contents):
+        item_and_price = [re.sub(self.reduced_tax_regex, r'', s) for s in main_contents]  # 軽減税率の記号は取り除く
         item = [re.sub(self.price_regex, r'', s) for s in item_and_price]
         item = [re.sub(self.top_num_regex, r'', s) for s in item]
         item = [re.sub(r'\\', r'', s) for s in item]
         price = [re.search(self.price_regex, s).group() for s in item_and_price]
-        return item, price, reduced_tax_rate_flg
-
-
-    def get_tax_excluded_included(self, receipt_content):
-        tax_excluded_flg = [1 for s in receipt_content if re.search(self.tax_ex_regex,s)]
-        tax_included_flg = [1 for s in receipt_content if re.search(self.tax_in_regex,s)]
-        tax_excluded = 1 if len(tax_excluded_flg)>len(tax_included_flg) else 0  # 外税判断の文字列が内税判断の文字列を超えた数存在すれば外税とする
-        return tax_excluded
+        return item, price
 
 
 def summing_up_ocr_results(ocr):
