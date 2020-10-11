@@ -42,7 +42,7 @@ class GetReceiptContours():
 
     def draw_contours(self):
         copy_input_file = self.input_file.copy()
-        draw_contours_file = cv2.drawContours(copy_input_file, self.approx_contours, -1, (0, 0, 255, 255), 6)
+        draw_contours_file = cv2.drawContours(copy_input_file, self.approx_contours, -1, (0, 0, 255, 255), 10)
         cv2.imwrite('{}/write_contours_{}.png'.format(self.interim_path, self.input_filename), draw_contours_file)
 
 
@@ -89,7 +89,7 @@ class GetEachReceiptImg(GetReceiptContours):
 
 def main():
     input_path_list = get_input_path_list(relative_path='../img/unprocessed', extension='jpg')
-    input_path = input_path_list[0]
+    input_path = input_path_list[0]  # 現状、読み取り対象の画像は1枚しか対応していないため
     
     GetReceiptContours(input_path)
     GetEachReceiptImg(input_path)
