@@ -6,7 +6,7 @@ import tkinter as tk
 import config
 
 
-class MakePages(tk.Tk):
+class MakeGuiScreen(tk.Tk):
     width = config.width
     height = config.height
 
@@ -15,7 +15,7 @@ class MakePages(tk.Tk):
         self.input_path_list = input_path_list
         self.ocr_results = ocr_results
         self.make_screen()
-        self.make_page1()
+        self.make_first_page()
 
 
     def make_screen(self):
@@ -23,9 +23,9 @@ class MakePages(tk.Tk):
         self.geometry('{}x{}'.format(self.width, self.height))
 
 
-    def make_page1(self):
-        self.page1 = tk.Frame()
-        self.page1.grid(row=0, column=0, sticky='nsew')
+    def make_first_page(self):
+        self.first_page = tk.Frame()
+        self.first_page.grid(row=0, column=0, sticky='nsew')
 
 
     def change_page(self):

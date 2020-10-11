@@ -7,12 +7,12 @@ from get_file_path_list import get_input_path_list
 from resize_image import resize_img
 
 
-class MakePage1():
+class MakeFirstPage():
     width = config.width
     height = config.height
 
     def __init__(self, gui):
-        self.page = gui.page1
+        self.page = gui.first_page
         self.show_receipt_contours(gui)
         self.show_button_first_receipt(gui)
 

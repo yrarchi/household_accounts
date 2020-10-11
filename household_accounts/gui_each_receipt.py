@@ -287,10 +287,10 @@ class OperationFrame():
         self.major_category_place = item_places["major_category"]
         self.medium_category_place = item_places["medium_category"]
         self.required_place = item_places["required"]
-        self.show_button_change_page(gui, input_file)
+        self.show_button_next_receipt(gui, input_file)
 
 
-    def show_button_change_page(self, gui, input_file):
+    def show_button_next_receipt(self, gui, input_file):
         def next_step():
             def write_modified_result():
                 date = self.date_place.get()
