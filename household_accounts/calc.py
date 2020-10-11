@@ -1,4 +1,9 @@
-def calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list, tax_rate, reduced_tax_rate):
+import config
+
+def calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list):
+    tax_rate = config.tax_rate
+    reduced_tax_rate = config.reduced_tax_rate
+    
     trans_price_list = []
     for price in price_list:
         try:

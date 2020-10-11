@@ -129,9 +129,6 @@ class ItemFrame():
     column_list = ['品目', '読み取り価格', '軽減税率', '税込価格', '大項目', '中項目', '付帯費', '付帯費内容', '特別費', '必要行']
     major_category_list = config.major_category_list
     medium_category_list = config.medium_category_list
-    tax_rate = config.tax_rate
-    reduced_tax_rate = config.reduced_tax_rate
-
         
     def __init__(self, frame, read_item, read_price, read_reduced_tax_rate_flg, read_tax_excluded, tax_place):
         self.num_item = len(read_price)
@@ -260,7 +257,7 @@ class ItemFrame():
             price_sum_labal.grid(row=self.num_item+3,column=3, sticky=tk.E, ipadx=20)
 
 
-        price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list, self.tax_rate, self.reduced_tax_rate)
+        price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list)
         sum_price = calc_sum_price(price_tax_in_list, self.item_places["required"])
         show_item_prices_tax_in(price_tax_in_list)
         show_sum_price_tax_in(sum_price)
