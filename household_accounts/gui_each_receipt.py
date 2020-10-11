@@ -126,7 +126,7 @@ class ImgFrame():
 
 
 class ItemFrame():
-    column_list = ['品目', '読み取り価格', '軽減税率', '税込価格', '大項目', '中項目', '付帯費', '付帯費内容', '特別費', '必要行']
+    column_list = ['必要行', '品目', '読み取り価格', '軽減税率', '税込価格', '大項目', '中項目', '付帯費', '付帯費内容', '特別費']
     major_category_list = config.major_category_list
     medium_category_list = config.medium_category_list
         
@@ -174,14 +174,18 @@ class ItemFrame():
 
         row = row + 1
 
+        required_flg_var = tk.IntVar(value=1)
+        required_flg = ttk.Checkbutton(self.frame, variable=required_flg_var, command=required_validate)
+        required_flg.grid(row=row, column=0)
+
         item_box = tk.Entry(self.frame, width=25)
         item_box.insert(tk.END, item)
-        item_box.grid(row=row, column=0)
+        item_box.grid(row=row, column=1)
 
         price_validate_cmd = self.frame.register(price_validate)
         price_invalid_cmd = self.frame.register(price_invalid)
         price_box = tk.Entry(self.frame, width=5, justify=tk.RIGHT)
-        price_box.grid(row=row, column=1)
+        price_box.grid(row=row, column=2)
         price_box.insert(tk.END, price)  # バリデーション前に入力して初期値についてもチェックする
         price_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         price_box['validatecommand'] = (price_validate_cmd, '%s')  # %s : 入力されている値
@@ -190,30 +194,26 @@ class ItemFrame():
 
         reduced_tax_rate_flg_var = tk.IntVar(value=reduced_tax_rate_flg)
         reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=reduced_tax_rate_flg_var)
-        reduced_tax_rate_flg.grid(row=row, column=2)
+        reduced_tax_rate_flg.grid(row=row, column=3)
 
         major_category = ttk.Combobox(self.frame, width=12)
         major_category['values'] = self.major_category_list
-        major_category.grid(row=row, column=4)
+        major_category.grid(row=row, column=5)  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
 
         medium_category = ttk.Combobox(self.frame, width=12)
         medium_category['values'] = self.medium_category_list
-        medium_category.grid(row=row, column=5)
+        medium_category.grid(row=row, column=6)
 
         extra_cost = tk.Entry(self.frame, width=5)
         extra_cost.insert(tk.END, '')
-        extra_cost.grid(row=row, column=6)
+        extra_cost.grid(row=row, column=7)
 
         extra_cost_detail = tk.Entry(self.frame, width=7)
         extra_cost_detail.insert(tk.END, '')
-        extra_cost_detail.grid(row=row, column=7)
+        extra_cost_detail.grid(row=row, column=8)
 
         special_cost = ttk.Checkbutton(self.frame)
-        special_cost.grid(row=row, column=8)
-
-        required_flg_var = tk.IntVar(value=1)
-        required_flg = ttk.Checkbutton(self.frame, variable=required_flg_var, command=required_validate)
-        required_flg.grid(row=row, column=9)
+        special_cost.grid(row=row, column=9)
 
         return item_box, price_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var
 
@@ -243,18 +243,18 @@ class ItemFrame():
             for row, price_tax_in in enumerate(price_tax_in_list):
                 row = row + 1
                 price_label = tk.Label(self.frame, text=price_tax_in, justify=tk.RIGHT)
-                price_label.grid(row=row, column=3, sticky=tk.E, ipadx=20)
+                price_label.grid(row=row, column=4, sticky=tk.E, ipadx=20)
             
 
         def show_sum_price_tax_in(sum_price):
             blank_row_label = tk.Label(self.frame)
             blank_row_label.grid(row=self.num_item+2,column=3)
 
-            sum_price_str_labal = tk.Label(self.frame, text='税込価格合計')
-            sum_price_str_labal.grid(row=self.num_item+3,column=1, columnspan=2, sticky=tk.E)
+            sum_price_str_labal = tk.Label(self.frame, text='合計額')
+            sum_price_str_labal.grid(row=self.num_item+3,column=2, columnspan=2, sticky=tk.E)
             
             price_sum_labal = tk.Label(self.frame, text=sum_price)
-            price_sum_labal.grid(row=self.num_item+3,column=3, sticky=tk.E, ipadx=20)
+            price_sum_labal.grid(row=self.num_item+3, column=4, sticky=tk.E, ipadx=20)
 
 
         price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list)
@@ -271,7 +271,7 @@ class ItemFrame():
             self.show_price_tax_in(price, reduced_tax_rate_flg, tax_excluded)
         
         calc_button = ttk.Button(self.frame, text='再計算', command=recalc)
-        calc_button.grid(row=self.num_item+4, column=3, sticky=tk.E)
+        calc_button.grid(row=self.num_item+4, column=4, sticky=tk.E)
 
 
 class OperationFrame():
