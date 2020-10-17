@@ -12,24 +12,25 @@ class OcrReceipt:
     date_regex = r'.{4}(/|年).{1,2}(/|月)[0-9]{1,2}'
     total_regex = r'(合計|小計|ノヽ言十|消費税).*[0-9]*'
     item_price_regex = r'([0-9]|\*|＊|※|[a-z]|[A-Z])\Z'  # 末尾が数字か軽減税率の記号かアルファベット（数字が読み取れていない場合用）
-    price_regex = r'([0-9]|[a-z]|[A-Z])*\Z'  # アルファベットは数値が誤って変換されていることがあるため
     reduced_tax_regex = r'(\*|＊|※|W|w)'
     top_num_regex = r'^[0-9]*'
     tax_ex_regex = r'外税'
     tax_in_regex = r'(内税|内消費税等)'
     conversion_num_before = ['O', 'U', 'b', 'Z', '<', 'i']  # アルファベットとして認識されている価格を変換するため
     conversion_num_after = ['0', '0', '6', '2', '2', '1']
+    separator = r'区切位置'
 
 
     def __init__(self, input_file):
         self.input_file = input_file
-        receipt_content = self.ocr(self.input_file)
-        self.payment_date = self.get_payment_date(receipt_content)
-        self.tax_excluded = self.get_tax_excluded_included(receipt_content)
-        main_contents = self.get_main_contents(receipt_content)
+        content_en, content = self.ocr(self.input_file)
+        self.payment_date = self.get_payment_date(content)
+        self.tax_excluded = self.get_tax_excluded_included(content)
+        main_contents = self.get_main_contents(content, content_en)
         self.reduced_tax_rate_flg = self.get_reduced_tax_rate_flg(main_contents)
-        self.item, self.price = self.get_item_and_price(main_contents)
+        self.item, self.price = self.separate_item_and_price(main_contents)
         self.price = self.modify_price(self.price)
+        self.exclude_unnecessary_row()
 
 
     def ocr(self, input_file):
@@ -39,40 +40,44 @@ class OcrReceipt:
             lang='jpn',
             builder=pyocr.builders.LineBoxBuilder(tesseract_layout=4)
             )
-        receipt_content = []
-        for i in range(len(receipt_ocr)):
-            content = receipt_ocr[i].content
-            content = re.sub(r' ', r'', content)
-            if content != '':
-                receipt_content.append(content)
-        return receipt_content
+        
+        receipt_content = list(map(lambda x: x.content, receipt_ocr))
+        receipt_content = [i for i in receipt_content if i != '']
+        content_en = []
+        content = []
+        for row in receipt_content:
+            index_separator = row.rfind(' ')  # 最も右のスペースを品目名と価格の区切りとみなす
+            row_en = row[:index_separator] + self.separator + row[index_separator+1:]
+            row_en = re.sub(r' ', r'', row_en)
+            row = re.sub(r' ', r'', row)
+            content_en.append(row_en)
+            content.append(row)
+        return content_en, content
 
 
-    def get_payment_date(self, receipt_content):
-        payment_date = [re.search(self.date_regex, s).group() for s in receipt_content if re.search(self.date_regex+r'(\(|日)', s)]
+    def get_payment_date(self, content):
+        payment_date = [re.search(self.date_regex, s).group() for s in content if re.search(self.date_regex+r'(\(|日)', s)]
         payment_date = payment_date[0] if payment_date != [] else '0000/00/00'
         payment_date = re.sub(r'(年|月)', r'/', payment_date)
         payment_date = datetime.strptime(payment_date, '%Y/%m/%d').strftime('%Y/%m/%d')
         return payment_date
 
 
-    def get_tax_excluded_included(self, receipt_content):
-        tax_excluded_flg = [1 for s in receipt_content if re.search(self.tax_ex_regex,s)]
-        tax_included_flg = [1 for s in receipt_content if re.search(self.tax_in_regex,s)]
+    def get_tax_excluded_included(self, content):
+        tax_excluded_flg = [1 for s in content if re.search(self.tax_ex_regex,s)]
+        tax_included_flg = [1 for s in content if re.search(self.tax_in_regex,s)]
         tax_excluded = 1 if len(tax_excluded_flg)>len(tax_included_flg) else 0  # 外税判断の文字列が内税判断の文字列を超えた数存在すれば外税とする
         return tax_excluded
 
 
-    def get_main_contents(self, receipt_content):
+    def get_main_contents(self, content, content_en):
         try:
-            start_low = [receipt_content.index(s) for s in receipt_content if re.search(self.date_regex, s)][0] + 1  # payment_dateの次の行が開始行とする
+            start_low = [content.index(s) for s in content if re.search(self.date_regex, s)][0] + 1  # payment_dateの次の行が開始行とする
         except IndexError:
             start_low = 0  # payment_dateがない場合は最初の行を開始行とする
-
-        sum_lows = [receipt_content.index(s) for s in receipt_content if re.search(self.total_regex, s)]
-        end_low = sum_lows[0] if sum_lows != [] else len(receipt_content)
-
-        main_contents = receipt_content[start_low:end_low]
+        sum_lows = [content.index(s) for s in content if re.search(self.total_regex, s)]
+        end_low = sum_lows[0] if sum_lows != [] else len(content)-1  # 合計行とみなす列があればその上の列を終了行とし、なければ最後まで含める
+        main_contents = content_en[start_low:end_low]
         main_contents = [s for s in main_contents if re.search(self.item_price_regex, s)]  
         return main_contents
 
@@ -82,20 +87,32 @@ class OcrReceipt:
         return reduced_tax_rate_flg
 
 
-    def get_item_and_price(self, main_contents):
+    def separate_item_and_price(self, main_contents):
         item_and_price = [re.sub(self.reduced_tax_regex, r'', s) for s in main_contents]  # 軽減税率の記号は取り除く
-        item = [re.sub(self.price_regex, r'', s) for s in item_and_price]
+        item = [s[:s.find(self.separator)] for s in item_and_price]  # separatorより左が品目名
         item = [re.sub(self.top_num_regex, r'', s) for s in item]
-        item = [re.sub(r'\\', r'', s) for s in item]
-        price = [re.search(self.price_regex, s).group() for s in item_and_price]
+        price = [s[s.find(self.separator)+len(self.separator):] for s in item_and_price]  # separatorより右が価格
         return item, price
     
 
     def modify_price(self, price):
+        price = [re.sub(r'(\\|:)', r'', s) for s in price]
         for before, after in zip(self.conversion_num_before, self.conversion_num_after):
             price = [re.sub(before, after, p) for p in price]
         price = [re.sub(r'([A-Z]|[a-z])', r'', p) for p in price]
         return price
+    
+
+    def exclude_unnecessary_row(self):
+        index_not_price = [i for i, p in enumerate(self.price) if p[0]=='0']  # 価格が0から始まっている
+        index_high_price = [i for i, p in enumerate(self.price) if int(p)>1000000]  # 10万円以上
+        index_empty_item = [i for i, p in enumerate(self.item) if p=='']  # 品目名がない
+        index_unnecessary = set(index_not_price + index_high_price + index_empty_item)
+        if len(index_unnecessary) > 0:
+            for index in sorted(index_unnecessary, reverse=True):
+                del self.price[index]
+                del self.item[index]
+                del self.reduced_tax_rate_flg[index]
 
 
 def summing_up_ocr_results(ocr):
