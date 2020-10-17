@@ -57,7 +57,7 @@ class OcrReceipt:
 
     def get_payment_date(self, content):
         payment_date = [re.search(self.date_regex, s).group() for s in content if re.search(self.date_regex+r'(\(|日)', s)]
-        payment_date = payment_date[0] if payment_date != [] else '0000/00/00'
+        payment_date = payment_date[0] if payment_date != [] else '2000/01/01'
         payment_date = re.sub(r'(年|月)', r'/', payment_date)
         payment_date = datetime.strptime(payment_date, '%Y/%m/%d').strftime('%Y/%m/%d')
         return payment_date
