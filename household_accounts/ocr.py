@@ -102,11 +102,11 @@ class OcrReceipt:
         if len(index_discount) > 0:
             for i in index_discount:
                 discount[i-1] = self.price[i]
-            for index in index_discount:  # indexがずれるので上のforループと分けている
-                del self.price[index]
-                del self.item[index]
-                del self.reduced_tax_rate_flg[index]
-                del discount[index]
+            for i in sorted(index_discount, reverse=True):  # indexがずれるので上のforループと分けている
+                del self.price[i]
+                del self.item[i]
+                del self.reduced_tax_rate_flg[i]
+                del discount[i]
         return discount
 
 
