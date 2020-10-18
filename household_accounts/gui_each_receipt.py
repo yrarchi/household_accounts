@@ -170,10 +170,9 @@ class ItemFrame():
             else:
                 item_box.delete(0, tk.END)
                 price_box.delete(0, tk.END)
+                discount_box.delete(0, tk.END)
                 major_category.set('')
                 medium_category.set('')
-                extra_cost.delete(0, tk.END)
-                extra_cost_detail.delete(0, tk.END)
 
         row = row + 1
 
@@ -265,9 +264,10 @@ class ItemFrame():
     def show_button_recalculation(self, item_places, tax_place):
         def recalc():
             price = list(map(lambda x: x.get(), item_places['price']))
+            discount = list(map(lambda x: x.get(), item_places['discount']))
             reduced_tax_rate_flg = list(map(lambda x: x.get(), item_places['reduced_tax_rate']))
             tax_excluded = tax_place.get()
-            self.show_price_tax_in(price, reduced_tax_rate_flg, tax_excluded)
+            self.show_price_tax_in(price, discount, reduced_tax_rate_flg, tax_excluded)
         
         calc_button = ttk.Button(self.frame, text='再計算', command=recalc)
         calc_button.grid(row=self.num_item+3, column=3, rowspan=2, columnspan=2, sticky=tk.E, ipadx=20)
