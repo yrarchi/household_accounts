@@ -140,7 +140,7 @@ class ItemFrame():
         self.num_item = len(self.item)
         self.show_item_column()
         self.item_places = self.get_place_items(self.item, self.price, self.discount, self.reduced_tax_rate_flg)
-        self.show_price_tax_in(self.price, self.reduced_tax_rate_flg, self.tax_ex_flg)
+        self.show_price_tax_in(self.price, self.discount, self.reduced_tax_rate_flg, self.tax_ex_flg)
         self.show_button_recalculation(self.item_places, tax_place)
 
 
@@ -239,7 +239,7 @@ class ItemFrame():
         return item_places
 
 
-    def show_price_tax_in(self, price_list, reduced_tax_rate_flg_list, tax_excluded_list):        
+    def show_price_tax_in(self, price_list, discount_list, reduced_tax_rate_flg_list, tax_excluded_flg):        
         def show_item_prices_tax_in(price_tax_in_list):
             for row, price_tax_in in enumerate(price_tax_in_list):
                 row = row + 1
@@ -256,7 +256,7 @@ class ItemFrame():
             price_sum_labal = tk.Label(self.frame, text=sum_price)
             price_sum_labal.grid(row=self.num_item+2, column=4, sticky=tk.E, ipadx=20)
 
-        price_tax_in_list = calc_price_tax_in(price_list, tax_excluded_list, reduced_tax_rate_flg_list)
+        price_tax_in_list = calc_price_tax_in(price_list, discount_list, reduced_tax_rate_flg_list, tax_excluded_flg)
         sum_price = calc_sum_price(price_tax_in_list, self.item_places['required'])
         show_item_prices_tax_in(price_tax_in_list)
         show_sum_price_tax_in(sum_price)
