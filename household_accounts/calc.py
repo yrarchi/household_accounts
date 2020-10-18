@@ -1,3 +1,4 @@
+import re
 import config
 
 def calc_price_tax_in(price_list, discount_list, reduced_tax_rate_flg_list, tax_excluded_flg):
@@ -12,7 +13,7 @@ def calc_price_tax_in(price_list, discount_list, reduced_tax_rate_flg_list, tax_
             price = 0
         trans_price_list.append(price)
     
-    discount_list = [int(x) for x in discount_list]
+    discount_list = [int(x) if re.fullmatch(r'-*[0-9]+', str(x)) else 0 for x in discount_list]
     price_discount_list = [p+d for p, d in zip(trans_price_list, discount_list)]
 
     price_tax_in_list = []
