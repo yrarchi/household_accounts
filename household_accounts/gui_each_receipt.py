@@ -126,7 +126,7 @@ class ImgFrame():
 
 
 class ItemFrame():
-    column_list = ['必要行', '品目', '読み取り価格', '割引', '軽減税率', '税込価格', '大項目', '中項目', '特別費']
+    column_list = ['必要行', '品目', '読み取り価格', '割引', '軽減税率', '税込価格', '大項目', '中項目']
     major_category_list = config.major_category_list
     medium_category_list = config.medium_category_list
         
@@ -209,9 +209,6 @@ class ItemFrame():
         medium_category = ttk.Combobox(self.frame, width=12)
         medium_category['values'] = self.medium_category_list
         medium_category.grid(row=row, column=7)
-
-        special_cost = ttk.Checkbutton(self.frame)
-        special_cost.grid(row=row, column=8)
 
         return item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var
 
