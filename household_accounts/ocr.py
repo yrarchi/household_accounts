@@ -19,17 +19,18 @@ class OcrReceipt:
     conversion_num_before = ['O', 'U', 'b', 'Z', '<', 'i']  # アルファベットとして認識されている価格を変換するため
     conversion_num_after = ['0', '0', '6', '2', '2', '1']
     separator = r'区切位置'
+    discount_regex = r'(割り*引|値引)'
 
 
     def __init__(self, input_file):
-        self.input_file = input_file
-        content_en, content = self.ocr(self.input_file)
+        content_en, content = self.ocr(input_file)
         self.payment_date = self.get_payment_date(content)
         self.tax_excluded = self.get_tax_excluded_included(content)
         main_contents = self.get_main_contents(content, content_en)
         self.reduced_tax_rate_flg = self.get_reduced_tax_rate_flg(main_contents)
-        self.item, self.price = self.separate_item_and_price(main_contents)
-        self.price = self.modify_price(self.price)
+        self.item, price = self.separate_item_and_price(main_contents)
+        self.price = self.modify_price(price)
+        self.discount = self.extract_discount()
         self.exclude_unnecessary_row()
 
 
@@ -95,6 +96,20 @@ class OcrReceipt:
         return item, price
     
 
+    def extract_discount(self):
+        discount = [0] * len(self.item)
+        index_discount = [self.item.index(s) for s in self.item if re.search(self.discount_regex, s)]
+        if len(index_discount) > 0:
+            for i in index_discount:
+                discount[i-1] = self.price[i]
+            for index in index_discount:  # indexがずれるので上のforループと分けている
+                del self.price[index]
+                del self.item[index]
+                del self.reduced_tax_rate_flg[index]
+                del discount[index]
+        return discount
+
+
     def modify_price(self, price):
         price = [re.sub(r'(\\|:)', r'', s) for s in price]
         for before, after in zip(self.conversion_num_before, self.conversion_num_after):
@@ -113,6 +128,7 @@ class OcrReceipt:
                 del self.price[index]
                 del self.item[index]
                 del self.reduced_tax_rate_flg[index]
+                del self.discount[index]
 
 
 def summing_up_ocr_results(ocr):
@@ -122,6 +138,7 @@ def summing_up_ocr_results(ocr):
     result['price'] = ocr.price
     result['reduced_tax_rate_flg'] = ocr.reduced_tax_rate_flg
     result['tax_excluded_flg'] = ocr.tax_excluded
+    result['discount'] = ocr.discount
     return result
 
 
