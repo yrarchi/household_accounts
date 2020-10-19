@@ -271,9 +271,10 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, info_places, item_places, gui, input_file):
+    def __init__(self, frame, info_places, item_places, gui, input_file, ocr_result):
         self.frame = frame
         self.gui = gui
+        self.ocr_result = ocr_result
         self.info_places = info_places
         self.item_places = item_places
         self.receipt_no = gui.input_path_list.index(input_file)
@@ -298,6 +299,17 @@ class OperationFrame():
                 csv.writer(file).writerow(row)
 
 
+    def write_item_fixes(self):
+        item_before = self.ocr_result['item']
+        item_after = [s.get() for s in self.item_places['item']]
+        item_fix = [(before, after) for before, after in zip(item_before, item_after) if before != after]
+        csv_path = os.path.join(os.path.dirname(__file__), '../csv/learning_file/item_ocr_fix.csv')
+        with open(csv_path, mode='r+') as file:
+            reader = [tuple(row) for row in csv.reader(file)]
+            add_row = [list(s) for s in list(set(item_fix) - set(reader))]
+            csv.writer(file, quoting=csv.QUOTE_NONE, escapechar='\\').writerows(add_row)
+
+
     def next_receipt(self):
         self.gui.change_page()
         next_receipt_no = self.receipt_no + 1
@@ -309,6 +321,7 @@ class OperationFrame():
     def show_button_next_receipt(self):
         def next_step():
             self.write_modified_result()
+            self.write_item_fixes()
             if self.receipt_no + 1 < self.num_receipts:
                 self.next_receipt()
             else:
@@ -326,7 +339,7 @@ def main(ocr_result, input_file, page, gui):
     ImgFrame(page.img_frame, page.img_width, page.height, input_file)
     item_frame = ItemFrame(page.item_frame, ocr_result, info_places['tax'])
     item_places = item_frame.item_places
-    OperationFrame(page.operation_frame, info_places, item_places, gui, input_file)
+    OperationFrame(page.operation_frame, info_places, item_places, gui, input_file, ocr_result)
 
 
 if __name__ == '__main__':
