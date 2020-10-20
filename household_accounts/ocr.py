@@ -140,7 +140,6 @@ def translate_item_fixes(item):
         before = [s[0] for s in reader]
         after = [s[1] for s in reader]
     item_fix = [after[before.index(s)] if s in before else s for s in item]
-    print(item_fix)
     return item_fix
 
         
