@@ -9,6 +9,7 @@ from PIL import Image
 import config
 from calc import calc_price_tax_in, calc_sum_price
 from gui_last_page import show_last_page
+from modify_from_history import write_modified_result, write_item_fixes
 from resize_image import resize_img
 
 
@@ -299,17 +300,6 @@ class OperationFrame():
                 csv.writer(file).writerow(row)
 
 
-    def write_item_fixes(self):
-        item_before = self.ocr_result['item']
-        item_after = [s.get() for s in self.item_places['item']]
-        item_fix = [(before, after) for before, after in zip(item_before, item_after) if before != after]
-        csv_path = os.path.join(os.path.dirname(__file__), '../csv/learning_file/item_ocr_fix.csv')
-        with open(csv_path, mode='r+') as file:
-            reader = [tuple(row) for row in csv.reader(file)]
-            add_row = [list(s) for s in list(set(item_fix) - set(reader))]
-            csv.writer(file, quoting=csv.QUOTE_NONE, escapechar='\\').writerows(add_row)
-
-
     def next_receipt(self):
         self.gui.change_page()
         next_receipt_no = self.receipt_no + 1
@@ -320,8 +310,9 @@ class OperationFrame():
 
     def show_button_next_receipt(self):
         def next_step():
-            self.write_modified_result()
-            self.write_item_fixes()
+            #self.write_modified_result()
+            write_modified_result(self.info_places, self.item_places)
+            write_item_fixes(self.ocr_result['item'], self.item_places['item'])
             if self.receipt_no + 1 < self.num_receipts:
                 self.next_receipt()
             else:
