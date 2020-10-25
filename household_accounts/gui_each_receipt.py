@@ -209,28 +209,19 @@ class ItemFrame():
         medium_category_combo.insert(tk.END, self.ocr_result['medium_category'][row])
         medium_category_combo.grid(row=row+1, column=7)
 
-        return item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category_combo, medium_category_combo, required_flg_var
+        places = [item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category_combo, medium_category_combo, required_flg_var]
+        return places
 
 
     def get_place_items(self):
         item_places = {}
-        item_places['item'] = []
-        item_places['price'] = []
-        item_places['discount'] = []
-        item_places['reduced_tax_rate'] = []
-        item_places['major_category'] = []
-        item_places['medium_category'] = []
-        item_places['required'] = []
+        names = ['item', 'price', 'discount', 'reduced_tax_rate', 'major_category', 'medium_category', 'required']
+        for name in names:
+            item_places[name] = []
         for row in range(self.num_item):
-            item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var \
-                = self.show_item_value(row)
-            item_places['item'].append(item_box)
-            item_places['price'].append(price_box)
-            item_places['discount'].append(discount_box)
-            item_places['reduced_tax_rate'].append(reduced_tax_rate_flg_var)
-            item_places['major_category'].append(major_category)
-            item_places['medium_category'].append(medium_category)
-            item_places['required'].append(required_flg_var)
+            places = self.show_item_value(row)
+            for place, name in zip(places, names):
+                item_places[name].append(place)
         return item_places
 
 
@@ -258,7 +249,7 @@ class ItemFrame():
         required_flg = list(map(lambda x: x.get(), self.item_places['required']))
 
         price_tax_in_list = calc_price_tax_in(price, discount, reduced_tax_rate_flg, tax_excluded_flg)
-        sum_price = calc_sum_price(price_tax_in_list, required_flg)
+        sum_price = calc_sum_price(price_tax_in_list, required_flg) 
         show_item_prices_tax_in(price_tax_in_list)
         show_sum_price_tax_in(sum_price)
 
