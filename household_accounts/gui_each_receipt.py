@@ -255,8 +255,10 @@ class ItemFrame():
         discount = list(map(lambda x: x.get(), self.item_places['discount']))
         reduced_tax_rate_flg = list(map(lambda x: x.get(), self.item_places['reduced_tax_rate']))
         tax_excluded_flg = self.tax_place.get()
+        required_flg = list(map(lambda x: x.get(), self.item_places['required']))
+
         price_tax_in_list = calc_price_tax_in(price, discount, reduced_tax_rate_flg, tax_excluded_flg)
-        sum_price = calc_sum_price(price_tax_in_list, self.item_places['required'])
+        sum_price = calc_sum_price(price_tax_in_list, required_flg)
         show_item_prices_tax_in(price_tax_in_list)
         show_sum_price_tax_in(sum_price)
 
