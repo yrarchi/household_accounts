@@ -138,9 +138,11 @@ class ItemFrame():
         self.reduced_tax_rate_flg = ocr_result['reduced_tax_rate_flg']
         self.tax_ex_flg = ocr_result['tax_excluded_flg']
         self.discount = ocr_result['discount']
+        self.major_category = ocr_result['major_category']
+        self.medium_category = ocr_result['medium_category']
         self.num_item = len(self.item)
         self.show_item_column()
-        self.item_places = self.get_place_items(self.item, self.price, self.discount, self.reduced_tax_rate_flg)
+        self.item_places = self.get_place_items(self.item, self.price, self.discount, self.reduced_tax_rate_flg, self.major_category, self.medium_category)
         self.show_price_tax_in(self.price, self.discount, self.reduced_tax_rate_flg, self.tax_ex_flg)
         self.show_button_recalculation(self.item_places, tax_place)
 
@@ -151,7 +153,7 @@ class ItemFrame():
             date_label.grid(row=0, column=column)
 
 
-    def show_item_value(self, item, price, reduced_tax_rate_flg, discount, row):
+    def show_item_value(self, item, price, reduced_tax_rate_flg, discount, major_category, medium_category, row):
         def price_validate(value):
             try:
                 int(value) is int
@@ -172,8 +174,8 @@ class ItemFrame():
                 item_box.delete(0, tk.END)
                 price_box.delete(0, tk.END)
                 discount_box.delete(0, tk.END)
-                major_category.set('')
-                medium_category.set('')
+                major_category_combo.set('')
+                medium_category_combo.set('')
 
         row = row + 1
 
@@ -203,18 +205,20 @@ class ItemFrame():
         reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=reduced_tax_rate_flg_var)
         reduced_tax_rate_flg.grid(row=row, column=4)
 
-        major_category = ttk.Combobox(self.frame, width=12)
-        major_category['values'] = self.major_category_list
-        major_category.grid(row=row, column=6)  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
+        major_category_combo = ttk.Combobox(self.frame, width=12)
+        major_category_combo['values'] = self.major_category_list
+        major_category_combo.insert(tk.END, major_category)
+        major_category_combo.grid(row=row, column=6)  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
 
-        medium_category = ttk.Combobox(self.frame, width=12)
-        medium_category['values'] = self.medium_category_list
-        medium_category.grid(row=row, column=7)
+        medium_category_combo = ttk.Combobox(self.frame, width=12)
+        medium_category_combo['values'] = self.medium_category_list
+        medium_category_combo.insert(tk.END, medium_category)
+        medium_category_combo.grid(row=row, column=7)
 
-        return item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var
+        return item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category_combo, medium_category_combo, required_flg_var
 
 
-    def get_place_items(self, item_list, price_list, discount_list, reduced_tax_rate_flg_list):
+    def get_place_items(self, item_list, price_list, discount_list, reduced_tax_rate_flg_list, major_category_list, medium_category_list):
         item_places = {}
         item_places['item'] = []
         item_places['price'] = []
@@ -223,9 +227,10 @@ class ItemFrame():
         item_places['major_category'] = []
         item_places['medium_category'] = []
         item_places['required'] = []
-        for row, (item, price, discount, reduced_tax_rate_flg) in enumerate(zip(item_list, price_list, discount_list, reduced_tax_rate_flg_list)):
+        for row, (item, price, discount, reduced_tax_rate_flg, major_category, medium_category) \
+                in enumerate(zip(item_list, price_list, discount_list, reduced_tax_rate_flg_list, major_category_list, medium_category_list)):
             item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var \
-                = self.show_item_value(item, price, reduced_tax_rate_flg, discount, row)
+                = self.show_item_value(item, price, reduced_tax_rate_flg, discount, major_category, medium_category, row)
             item_places['item'].append(item_box)
             item_places['price'].append(price_box)
             item_places['discount'].append(discount_box)
