@@ -133,18 +133,13 @@ class ItemFrame():
         
     def __init__(self, frame, ocr_result, tax_place):
         self.frame = frame
-        self.item = ocr_result['item']
-        self.price = ocr_result['price']
-        self.reduced_tax_rate_flg = ocr_result['reduced_tax_rate_flg']
-        self.tax_ex_flg = ocr_result['tax_excluded_flg']
-        self.discount = ocr_result['discount']
-        self.major_category = ocr_result['major_category']
-        self.medium_category = ocr_result['medium_category']
-        self.num_item = len(self.item)
+        self.ocr_result = ocr_result
+        self.tax_place = tax_place
+        self.num_item = len(self.ocr_result['item'])
         self.show_item_column()
-        self.item_places = self.get_place_items(self.item, self.price, self.discount, self.reduced_tax_rate_flg, self.major_category, self.medium_category)
-        self.show_price_tax_in(self.price, self.discount, self.reduced_tax_rate_flg, self.tax_ex_flg)
-        self.show_button_recalculation(self.item_places, tax_place)
+        self.item_places = self.get_place_items()
+        self.show_price_tax_in()
+        self.show_button_recalculation()
 
 
     def show_item_column(self):
@@ -153,7 +148,7 @@ class ItemFrame():
             date_label.grid(row=0, column=column)
 
 
-    def show_item_value(self, item, price, reduced_tax_rate_flg, discount, major_category, medium_category, row):
+    def show_item_value(self, row):
         def price_validate(value):
             try:
                 int(value) is int
@@ -177,48 +172,47 @@ class ItemFrame():
                 major_category_combo.set('')
                 medium_category_combo.set('')
 
-        row = row + 1
 
         required_flg_var = tk.IntVar(value=1)
         required_flg = ttk.Checkbutton(self.frame, variable=required_flg_var, command=required_validate)
-        required_flg.grid(row=row, column=0)
+        required_flg.grid(row=row+1, column=0)
 
         item_box = tk.Entry(self.frame, width=25)
-        item_box.insert(tk.END, item)
-        item_box.grid(row=row, column=1)
+        item_box.insert(tk.END, self.ocr_result['item'][row])
+        item_box.grid(row=row+1, column=1)
 
         price_validate_cmd = self.frame.register(price_validate)
         price_invalid_cmd = self.frame.register(price_invalid)
         price_box = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
-        price_box.grid(row=row, column=2)
-        price_box.insert(tk.END, price)  # バリデーション前に入力して初期値についてもチェックする
+        price_box.grid(row=row+1, column=2)
+        price_box.insert(tk.END, self.ocr_result['price'][row])  # バリデーション前に入力して初期値についてもチェックする
         price_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         price_box['validatecommand'] = (price_validate_cmd, '%s')  # %s : 入力されている値
         price_box['validate'] = 'focus'
         price_box['invalidcommand'] = (price_invalid_cmd)
 
         discount_box = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
-        discount_box.grid(row=row, column=3)
-        discount_box.insert(tk.END, discount)
+        discount_box.grid(row=row+1, column=3)
+        discount_box.insert(tk.END, self.ocr_result['discount'][row])
 
-        reduced_tax_rate_flg_var = tk.IntVar(value=reduced_tax_rate_flg)
+        reduced_tax_rate_flg_var = tk.IntVar(value=self.ocr_result['reduced_tax_rate_flg'][row])
         reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=reduced_tax_rate_flg_var)
-        reduced_tax_rate_flg.grid(row=row, column=4)
+        reduced_tax_rate_flg.grid(row=row+1, column=4)
 
         major_category_combo = ttk.Combobox(self.frame, width=12)
         major_category_combo['values'] = self.major_category_list
-        major_category_combo.insert(tk.END, major_category)
-        major_category_combo.grid(row=row, column=6)  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
+        major_category_combo.insert(tk.END, self.ocr_result['major_category'][row])
+        major_category_combo.grid(row=row+1, column=6)  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
 
         medium_category_combo = ttk.Combobox(self.frame, width=12)
         medium_category_combo['values'] = self.medium_category_list
-        medium_category_combo.insert(tk.END, medium_category)
-        medium_category_combo.grid(row=row, column=7)
+        medium_category_combo.insert(tk.END, self.ocr_result['medium_category'][row])
+        medium_category_combo.grid(row=row+1, column=7)
 
         return item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category_combo, medium_category_combo, required_flg_var
 
 
-    def get_place_items(self, item_list, price_list, discount_list, reduced_tax_rate_flg_list, major_category_list, medium_category_list):
+    def get_place_items(self):
         item_places = {}
         item_places['item'] = []
         item_places['price'] = []
@@ -227,10 +221,9 @@ class ItemFrame():
         item_places['major_category'] = []
         item_places['medium_category'] = []
         item_places['required'] = []
-        for row, (item, price, discount, reduced_tax_rate_flg, major_category, medium_category) \
-                in enumerate(zip(item_list, price_list, discount_list, reduced_tax_rate_flg_list, major_category_list, medium_category_list)):
+        for row in range(self.num_item):
             item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category, medium_category, required_flg_var \
-                = self.show_item_value(item, price, reduced_tax_rate_flg, discount, major_category, medium_category, row)
+                = self.show_item_value(row)
             item_places['item'].append(item_box)
             item_places['price'].append(price_box)
             item_places['discount'].append(discount_box)
@@ -241,7 +234,7 @@ class ItemFrame():
         return item_places
 
 
-    def show_price_tax_in(self, price_list, discount_list, reduced_tax_rate_flg_list, tax_excluded_flg):        
+    def show_price_tax_in(self):
         def show_item_prices_tax_in(price_tax_in_list):
             for row, price_tax_in in enumerate(price_tax_in_list):
                 row = row + 1
@@ -258,20 +251,19 @@ class ItemFrame():
             price_sum_labal = tk.Label(self.frame, text=sum_price)
             price_sum_labal.grid(row=self.num_item+2, column=5, sticky=tk.E, ipadx=20)
 
-        price_tax_in_list = calc_price_tax_in(price_list, discount_list, reduced_tax_rate_flg_list, tax_excluded_flg)
+        price = list(map(lambda x: x.get(), self.item_places['price']))
+        discount = list(map(lambda x: x.get(), self.item_places['discount']))
+        reduced_tax_rate_flg = list(map(lambda x: x.get(), self.item_places['reduced_tax_rate']))
+        tax_excluded_flg = self.tax_place.get()
+        price_tax_in_list = calc_price_tax_in(price, discount, reduced_tax_rate_flg, tax_excluded_flg)
         sum_price = calc_sum_price(price_tax_in_list, self.item_places['required'])
         show_item_prices_tax_in(price_tax_in_list)
         show_sum_price_tax_in(sum_price)
 
 
-    def show_button_recalculation(self, item_places, tax_place):
+    def show_button_recalculation(self):
         def recalc():
-            price = list(map(lambda x: x.get(), item_places['price']))
-            discount = list(map(lambda x: x.get(), item_places['discount']))
-            reduced_tax_rate_flg = list(map(lambda x: x.get(), item_places['reduced_tax_rate']))
-            tax_excluded = tax_place.get()
-            self.show_price_tax_in(price, discount, reduced_tax_rate_flg, tax_excluded)
-        
+            self.show_price_tax_in()
         calc_button = ttk.Button(self.frame, text='再計算', command=recalc)
         calc_button.grid(row=self.num_item+3, column=4, rowspan=2, columnspan=2, sticky=tk.E, ipadx=20)
 
