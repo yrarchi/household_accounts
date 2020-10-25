@@ -9,6 +9,7 @@ from PIL import Image
 import config
 from calc import calc_price_tax_in, calc_sum_price
 from gui_last_page import show_last_page
+from ocr import determine_category
 from write_csv import write_modified_result, write_item_fixes, write_category_fixes
 from resize_image import resize_img
 
@@ -172,6 +173,13 @@ class ItemFrame():
                 major_category_combo.set('')
                 medium_category_combo.set('')
 
+        def item_validate(value):
+            major_category, medium_category = determine_category(value)
+            major_category_combo.set('')
+            major_category_combo.insert(tk.END, major_category)
+            medium_category_combo.set('')
+            medium_category_combo.insert(tk.END, medium_category)
+
 
         required_flg_var = tk.IntVar(value=1)
         required_flg = ttk.Checkbutton(self.frame, variable=required_flg_var, command=required_validate)
@@ -180,6 +188,9 @@ class ItemFrame():
         item_box = tk.Entry(self.frame, width=25)
         item_box.insert(tk.END, self.ocr_result['item'][row])
         item_box.grid(row=row+1, column=1)
+        item_validate_cmd = self.frame.register(item_validate)
+        item_box['validatecommand'] = (item_validate_cmd, '%P')  # %P : 修正後の入力内容
+        item_box['validate'] = 'focusout'
 
         price_validate_cmd = self.frame.register(price_validate)
         price_invalid_cmd = self.frame.register(price_invalid)

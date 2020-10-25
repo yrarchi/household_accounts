@@ -133,13 +133,13 @@ class OcrReceipt:
                 del self.discount[index]
 
 
-def translate_item_fixes(item):
+def translate_item_fixes(item_list):
     csv_path = os.path.join(os.path.dirname(__file__), '../csv/learning_file/item_ocr_fix.csv')
     with open(csv_path, mode='r') as file:
         reader = [row for row in csv.reader(file)]
         before = [s[0] for s in reader]
         after = [s[1] for s in reader]
-    item_fix = [after[before.index(s)] if s in before else s for s in item]
+    item_fix = [after[before.index(s)] if s in before else s for s in item_list]
     return item_fix
 
 
@@ -150,8 +150,8 @@ def determine_category(item):
         item_read = [s[0] for s in reader]
         major_read = [s[1] for s in reader]
         medium_read = [s[2] for s in reader]
-    major_category = [major_read[item_read.index(s)] if s in item_read else '' for s in item]
-    medium_category = [medium_read[item_read.index(s)] if s in item_read else '' for s in item]
+    major_category = major_read[item_read.index(item)] if item in item_read else ''
+    medium_category = medium_read[item_read.index(item)] if item in item_read else ''
     return major_category, medium_category
 
 
@@ -181,7 +181,9 @@ def main():
     for i, input_file in enumerate(input_path_list):
         ocr = OcrReceipt(input_file)
         item_fix = translate_item_fixes(ocr.item)
-        major_category, medium_category = determine_category(item_fix)
+        category = [(determine_category(s)) for s in item_fix]
+        major_category = [s[0] for s in category]
+        medium_category = [s[1] for s in category]
         ocr_results[input_file] = summing_up_ocr_results(ocr, item_fix, major_category, medium_category)
         indicate_processing_status(i, len(input_path_list))
     return ocr_results
