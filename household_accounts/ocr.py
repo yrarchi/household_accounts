@@ -1,3 +1,5 @@
+import csv
+import os
 import pyocr
 import pyocr.builders
 import re
@@ -131,10 +133,20 @@ class OcrReceipt:
                 del self.discount[index]
 
 
-def summing_up_ocr_results(ocr):
+def translate_item_fixes(item):
+    csv_path = os.path.join(os.path.dirname(__file__), '../csv/learning_file/item_ocr_fix.csv')
+    with open(csv_path, mode='r') as file:
+        reader = [row for row in csv.reader(file)]
+        before = [s[0] for s in reader]
+        after = [s[1] for s in reader]
+    item_fix = [after[before.index(s)] if s in before else s for s in item]
+    return item_fix
+
+        
+def summing_up_ocr_results(ocr, item_fix):
     result = {}
     result['payment_date'] = ocr.payment_date
-    result['item'] = ocr.item
+    result['item'] = item_fix
     result['price'] = ocr.price
     result['reduced_tax_rate_flg'] = ocr.reduced_tax_rate_flg
     result['tax_excluded_flg'] = ocr.tax_excluded
@@ -154,7 +166,8 @@ def main():
     ocr_results = {}
     for i, input_file in enumerate(input_path_list):
         ocr = OcrReceipt(input_file)
-        ocr_results[input_file] = summing_up_ocr_results(ocr)
+        item_fix = translate_item_fixes(ocr.item)
+        ocr_results[input_file] = summing_up_ocr_results(ocr, item_fix)
         indicate_processing_status(i, len(input_path_list))
     return ocr_results
 

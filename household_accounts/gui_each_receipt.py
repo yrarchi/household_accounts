@@ -9,6 +9,7 @@ from PIL import Image
 import config
 from calc import calc_price_tax_in, calc_sum_price
 from gui_last_page import show_last_page
+from write_csv import write_modified_result, write_item_fixes
 from resize_image import resize_img
 
 
@@ -271,31 +272,15 @@ class ItemFrame():
 
 
 class OperationFrame():
-    def __init__(self, frame, info_places, item_places, gui, input_file):
+    def __init__(self, frame, info_places, item_places, gui, input_file, ocr_result):
         self.frame = frame
         self.gui = gui
+        self.ocr_result = ocr_result
         self.info_places = info_places
         self.item_places = item_places
         self.receipt_no = gui.input_path_list.index(input_file)
         self.num_receipts = len(gui.input_path_list)
         self.show_button_next_receipt()
-
-
-    def write_modified_result(self):
-        date = self.info_places['date'].get()
-        shop = self.info_places['shop'].get()
-        today = datetime.datetime.now().strftime('%Y%m%d')
-        csv_path = os.path.join(os.path.dirname(__file__), '../csv/{}.csv'.format(today))
-        with open(csv_path, mode='a') as file:
-            required = self.item_places['required']
-            index_required = [i for i, r in enumerate(required) if r.get()==1]
-            for i in index_required:
-                item = self.item_places['item'][i].get()
-                price = self.item_places['price'][i].get()
-                major_category = self.item_places['major_category'][i].get()
-                medium_category = self.item_places['medium_category'][i].get()
-                row = [date, item, price, major_category, medium_category, shop]
-                csv.writer(file).writerow(row)
 
 
     def next_receipt(self):
@@ -308,7 +293,8 @@ class OperationFrame():
 
     def show_button_next_receipt(self):
         def next_step():
-            self.write_modified_result()
+            write_modified_result(self.info_places, self.item_places)
+            write_item_fixes(self.ocr_result['item'], self.item_places['item'])
             if self.receipt_no + 1 < self.num_receipts:
                 self.next_receipt()
             else:
@@ -326,7 +312,7 @@ def main(ocr_result, input_file, page, gui):
     ImgFrame(page.img_frame, page.img_width, page.height, input_file)
     item_frame = ItemFrame(page.item_frame, ocr_result, info_places['tax'])
     item_places = item_frame.item_places
-    OperationFrame(page.operation_frame, info_places, item_places, gui, input_file)
+    OperationFrame(page.operation_frame, info_places, item_places, gui, input_file, ocr_result)
 
 
 if __name__ == '__main__':
