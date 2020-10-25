@@ -9,7 +9,7 @@ from PIL import Image
 import config
 from calc import calc_price_tax_in, calc_sum_price
 from gui_last_page import show_last_page
-from write_csv import write_modified_result, write_item_fixes
+from write_csv import write_modified_result, write_item_fixes, write_category_fixes
 from resize_image import resize_img
 
 
@@ -295,6 +295,7 @@ class OperationFrame():
         def next_step():
             write_modified_result(self.info_places, self.item_places)
             write_item_fixes(self.ocr_result['item'], self.item_places['item'])
+            write_category_fixes(self.item_places['item'], self.item_places['major_category'], self.item_places['medium_category'])
             if self.receipt_no + 1 < self.num_receipts:
                 self.next_receipt()
             else:
