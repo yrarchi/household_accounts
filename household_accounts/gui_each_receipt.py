@@ -129,6 +129,7 @@ class ImgFrame():
 
 class ItemFrame():
     column_list = ['必要行', '品目', '読み取り価格', '割引', '軽減税率', '税込価格', '大項目', '中項目']
+    item_names = ['item', 'price', 'discount', 'reduced_tax_rate', 'major_category', 'medium_category', 'required']
     major_category_list = config.major_category_list
     medium_category_list = config.medium_category_list
         
@@ -150,6 +151,72 @@ class ItemFrame():
 
 
     def show_item_value(self, row):
+        places = {}
+        places['required'] = tk.IntVar(value=1)
+        required_flg = ttk.Checkbutton(self.frame, variable=places['required'])
+        required_flg.grid(row=row+1, column=0)
+
+        places['item'] = tk.Entry(self.frame, width=25)
+        places['item'].insert(tk.END, self.ocr_result['item'][row])
+        places['item'].grid(row=row+1, column=1)
+
+        places['price'] = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
+        places['price'].grid(row=row+1, column=2)
+        places['price'].insert(tk.END, self.ocr_result['price'][row])
+        
+        places['discount'] = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
+        places['discount'].grid(row=row+1, column=3)
+        places['discount'].insert(tk.END, self.ocr_result['discount'][row])
+
+        places['reduced_tax_rate'] = tk.IntVar(value=self.ocr_result['reduced_tax_rate_flg'][row])
+        reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=places['reduced_tax_rate'])
+        reduced_tax_rate_flg.grid(row=row+1, column=4)
+
+        places['major_category'] = ttk.Combobox(self.frame, width=12)
+        places['major_category']['values'] = self.major_category_list
+        places['major_category'].insert(tk.END, self.ocr_result['major_category'][row])
+        places['major_category'].grid(row=row+1, column=6)  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
+
+        places['medium_category'] = ttk.Combobox(self.frame, width=12)
+        places['medium_category']['values'] = self.medium_category_list
+        places['medium_category'].insert(tk.END, self.ocr_result['medium_category'][row])
+        places['medium_category'].grid(row=row+1, column=7)
+
+        self.validate_item(places)
+        self.validate_required(required_flg, places)
+        self.validate_price(places['price'])
+        return places
+
+
+    def validate_item(self, places):
+        def item_validate(value):
+            major_category, medium_category = determine_category(value)
+            places['major_category'].set('')
+            places['major_category'].insert(tk.END, major_category)
+            places['medium_category'].set('')
+            places['medium_category'].insert(tk.END, medium_category)
+
+        item_validate_cmd = self.frame.register(item_validate)
+        places['item']['validatecommand'] = (item_validate_cmd, '%P')  # %P : 修正後の入力内容
+        places['item']['validate'] = 'focusout'
+
+
+    def validate_required(self, required_flg, places):
+        def required_validate():
+            if places['required'].get():
+                pass
+            else:
+                places['item'].delete(0, tk.END)
+                places['price'].delete(0, tk.END)
+                places['discount'].delete(0, tk.END)
+                places['major_category'].set('')
+                places['medium_category'].set('')
+                places['reduced_tax_rate'].set(0)
+        
+        required_flg['command'] = required_validate
+
+
+    def validate_price(self, price_box):
         def price_validate(value):
             try:
                 int(value) is int
@@ -162,77 +229,23 @@ class ItemFrame():
 
         def price_invalid():
             price_box['bg'] = 'tomato'
-
-        def required_validate():
-            if required_flg_var.get():
-                pass
-            else:
-                item_box.delete(0, tk.END)
-                price_box.delete(0, tk.END)
-                discount_box.delete(0, tk.END)
-                major_category_combo.set('')
-                medium_category_combo.set('')
-
-        def item_validate(value):
-            major_category, medium_category = determine_category(value)
-            major_category_combo.set('')
-            major_category_combo.insert(tk.END, major_category)
-            medium_category_combo.set('')
-            medium_category_combo.insert(tk.END, medium_category)
-
-
-        required_flg_var = tk.IntVar(value=1)
-        required_flg = ttk.Checkbutton(self.frame, variable=required_flg_var, command=required_validate)
-        required_flg.grid(row=row+1, column=0)
-
-        item_box = tk.Entry(self.frame, width=25)
-        item_box.insert(tk.END, self.ocr_result['item'][row])
-        item_box.grid(row=row+1, column=1)
-        item_validate_cmd = self.frame.register(item_validate)
-        item_box['validatecommand'] = (item_validate_cmd, '%P')  # %P : 修正後の入力内容
-        item_box['validate'] = 'focusout'
-
+        
+        price_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         price_validate_cmd = self.frame.register(price_validate)
         price_invalid_cmd = self.frame.register(price_invalid)
-        price_box = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
-        price_box.grid(row=row+1, column=2)
-        price_box.insert(tk.END, self.ocr_result['price'][row])  # バリデーション前に入力して初期値についてもチェックする
-        price_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         price_box['validatecommand'] = (price_validate_cmd, '%s')  # %s : 入力されている値
         price_box['validate'] = 'focus'
         price_box['invalidcommand'] = (price_invalid_cmd)
 
-        discount_box = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
-        discount_box.grid(row=row+1, column=3)
-        discount_box.insert(tk.END, self.ocr_result['discount'][row])
-
-        reduced_tax_rate_flg_var = tk.IntVar(value=self.ocr_result['reduced_tax_rate_flg'][row])
-        reduced_tax_rate_flg = ttk.Checkbutton(self.frame, variable=reduced_tax_rate_flg_var)
-        reduced_tax_rate_flg.grid(row=row+1, column=4)
-
-        major_category_combo = ttk.Combobox(self.frame, width=12)
-        major_category_combo['values'] = self.major_category_list
-        major_category_combo.insert(tk.END, self.ocr_result['major_category'][row])
-        major_category_combo.grid(row=row+1, column=6)  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
-
-        medium_category_combo = ttk.Combobox(self.frame, width=12)
-        medium_category_combo['values'] = self.medium_category_list
-        medium_category_combo.insert(tk.END, self.ocr_result['medium_category'][row])
-        medium_category_combo.grid(row=row+1, column=7)
-
-        places = [item_box, price_box, discount_box, reduced_tax_rate_flg_var, major_category_combo, medium_category_combo, required_flg_var]
-        return places
-
 
     def get_place_items(self):
         item_places = {}
-        names = ['item', 'price', 'discount', 'reduced_tax_rate', 'major_category', 'medium_category', 'required']
-        for name in names:
+        for name in self.item_names:
             item_places[name] = []
         for row in range(self.num_item):
             places = self.show_item_value(row)
-            for place, name in zip(places, names):
-                item_places[name].append(place)
+            for name in self.item_names:
+                item_places[name].append(places[name])
         return item_places
 
 
