@@ -250,6 +250,21 @@ class ItemFrame():
         return item_places
 
 
+    def calc_price_tax_in(self):
+        def get_value():
+            price = list(map(lambda x: x.get(), self.item_places['price']))
+            discount = list(map(lambda x: x.get(), self.item_places['discount']))
+            reduced_tax_rate_flg = list(map(lambda x: x.get(), self.item_places['reduced_tax_rate']))
+            tax_excluded_flg = self.tax_place.get()
+            required_flg = list(map(lambda x: x.get(), self.item_places['required']))
+            return price, discount, reduced_tax_rate_flg, tax_excluded_flg, required_flg
+        
+        price, discount, reduced_tax_rate_flg, tax_excluded_flg, required_flg = get_value()
+        price_tax_in_list = calc_price_tax_in(price, discount, reduced_tax_rate_flg, tax_excluded_flg)
+        sum_price = calc_sum_price(price_tax_in_list, required_flg)
+        return price_tax_in_list, sum_price
+
+
     def show_price_tax_in(self):
         def show_item_prices_tax_in(price_tax_in_list):
             for row, price_tax_in in enumerate(price_tax_in_list):
@@ -267,14 +282,7 @@ class ItemFrame():
             price_sum_labal = tk.Label(self.frame, text=sum_price)
             price_sum_labal.grid(row=self.num_item+2, column=5, sticky=tk.E, ipadx=20)
 
-        price = list(map(lambda x: x.get(), self.item_places['price']))
-        discount = list(map(lambda x: x.get(), self.item_places['discount']))
-        reduced_tax_rate_flg = list(map(lambda x: x.get(), self.item_places['reduced_tax_rate']))
-        tax_excluded_flg = self.tax_place.get()
-        required_flg = list(map(lambda x: x.get(), self.item_places['required']))
-
-        price_tax_in_list = calc_price_tax_in(price, discount, reduced_tax_rate_flg, tax_excluded_flg)
-        sum_price = calc_sum_price(price_tax_in_list, required_flg) 
+        price_tax_in_list, sum_price = self.calc_price_tax_in()
         show_item_prices_tax_in(price_tax_in_list)
         show_sum_price_tax_in(sum_price)
 
