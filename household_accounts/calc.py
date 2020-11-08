@@ -21,8 +21,7 @@ def calc_price_tax_in(price_list, discount_list, reduced_tax_rate_flg_list, tax_
     return price_tax_in_list
 
 
-def calc_sum_price(price_tax_in_list, required_place):
-    required = list(map(lambda x: x.get(), required_place))  # 必要行としてチェックしてある品目のみの合計額を出すため
+def calc_sum_price(price_tax_in_list, required):
     required_price_tax_in = [p for p, r in zip(price_tax_in_list, required) if r==1]
     sum_price = sum(required_price_tax_in)
     return sum_price
