@@ -13,12 +13,12 @@ from get_file_path_list import get_input_path_list
 class OcrReceipt:
     date_regex = r'.{4}(/|年).{1,2}(/|月)[0-9]{1,2}'
     total_regex = r'(合計|小計|ノヽ言十|消費税|対象計|お釣り*|外税対象).*[0-9]*'
-    item_price_regex = r'([0-9]|\*|＊|※|[a-z]|[A-Z])\Z'  # 末尾が数字か軽減税率の記号かアルファベット（数字が読み取れていない場合用）
+    item_price_regex = r'([0-9]|[a-z]|[A-Z]).{0,1}\Z'  # 末尾が数字か軽減税率の記号か英字（英字は数字が読み取れていない場合用）
     reduced_tax_regex = r'(\*|＊|※|W|w)'
     top_num_regex = r'^[0-9]*'
     tax_ex_regex = r'外税'
     tax_in_regex = r'(内税|内消費税等)'
-    conversion_num_before = ['O', 'U', 'b', 'Z', '<', 'i']  # アルファベットとして認識されている価格を変換するため
+    conversion_num_before = ['O', 'U', 'b', 'Z', '<', 'i']  # 英字として認識されている価格を変換するため
     conversion_num_after = ['0', '0', '6', '2', '2', '1']
     separator = r'区切位置'
     discount_regex = r'(割り*引|値引)'
@@ -26,8 +26,6 @@ class OcrReceipt:
 
     def __init__(self, input_file):
         content_en, content = self.ocr(input_file)
-        print(content)
-        print("===")
         self.payment_date = self.get_payment_date(content)
         self.tax_excluded = self.get_tax_excluded_included(content)
         main_contents = self.get_main_contents(content, content_en)
@@ -35,8 +33,6 @@ class OcrReceipt:
         self.item, price = self.separate_item_and_price(main_contents)
         self.price = self.modify_price(price)
         self.discount = self.extract_discount()
-        print(self.item)
-        print(self.price)
         self.exclude_unnecessary_row()
 
 
@@ -53,7 +49,7 @@ class OcrReceipt:
         content_en = []
         content = []
         for row in receipt_content:
-            index_separator = row.rfind(' ')  # 最も右のスペースを品目名と価格の区切りとみなす
+            index_separator = [row.rfind('\\') if('\\' in row) else row.rfind(' ')][0]
             row_en = row[:index_separator] + self.separator + row[index_separator+1:]
             row_en = re.sub(r' ', r'', row_en)
             row = re.sub(r' ', r'', row)
@@ -84,6 +80,7 @@ class OcrReceipt:
             start_low = 0  # payment_dateがない場合は最初の行を開始行とする
         sum_lows = [content.index(s) for s in content if re.search(self.total_regex, s)]
         end_low = sum_lows[0] if sum_lows != [] else len(content)-1  # 合計行とみなす列があればその上の列を終了行とし、なければ最後まで含める
+        end_low = end_low if start_low <= end_low else len(content)-1  # レシート冒頭で消費税等total_regexに関する言及がある場合、終了行が開始行より前に来てしまうため
         main_contents = content_en[start_low:end_low]
         main_contents = [s for s in main_contents if re.search(self.item_price_regex, s)]  
         return main_contents
