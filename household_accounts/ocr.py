@@ -26,6 +26,8 @@ class OcrReceipt:
 
     def __init__(self, input_file):
         content_en, content = self.ocr(input_file)
+        print(content)
+        print("===")
         self.payment_date = self.get_payment_date(content)
         self.tax_excluded = self.get_tax_excluded_included(content)
         main_contents = self.get_main_contents(content, content_en)
@@ -33,6 +35,8 @@ class OcrReceipt:
         self.item, price = self.separate_item_and_price(main_contents)
         self.price = self.modify_price(price)
         self.discount = self.extract_discount()
+        print(self.item)
+        print(self.price)
         self.exclude_unnecessary_row()
 
 
@@ -116,7 +120,7 @@ class OcrReceipt:
         price = [re.sub(r'(\\|:)', r'', s) for s in price]
         for before, after in zip(self.conversion_num_before, self.conversion_num_after):
             price = [re.sub(before, after, p) for p in price]
-        price = [re.sub(r'([A-Z]|[a-z])', r'', p) for p in price]
+        price = [re.sub(r'[^0-9]', r'', p) for p in price]
         return price
     
 
