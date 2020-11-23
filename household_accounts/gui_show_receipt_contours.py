@@ -3,7 +3,7 @@ import tkinter as tk
 import config
 import gui_each_receipt
 from get_file_path_list import get_input_path_list
-from resize_image import resize_img
+from edit_image import resize_img
 
 
 class MakeFirstPage():

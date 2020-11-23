@@ -1,7 +1,8 @@
 import datetime
-import glob
-import os
 import tkinter as tk
+
+from edit_image import delete_img
+
 
 def show_last_page(gui):
     def show_message():
@@ -13,11 +14,7 @@ def show_last_page(gui):
     
     def show_close_button():
         def close_button_function():
-            img_delete_path = os.path.join(os.path.dirname(__file__), '../img/interim/**/*.png')
-            img_delete_path_list = glob.glob(img_delete_path, recursive=True)
-            for p in img_delete_path_list:
-                if os.path.isfile(p):
-                    os.remove(p)
+            delete_img('../img/interim/**/*.png')
             gui.destroy()
     
         close_button = tk.Button(gui.next_page, text='閉じる', command=close_button_function)
