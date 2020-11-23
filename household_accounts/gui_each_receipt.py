@@ -11,7 +11,7 @@ from calc import calc_price_tax_in, calc_sum_price
 from gui_last_page import show_last_page
 from ocr import determine_category, read_category
 from write_csv import write_modified_result, write_item_fixes, write_category_fixes
-from resize_image import resize_img
+from edit_image import resize_img
 
 
 class DivideScreen():
