@@ -12,7 +12,7 @@ from get_file_path_list import get_input_path_list
 
 class OcrReceipt:
     date_regex = r'.{4}(/|年).{1,2}(/|月)[0-9]{1,2}'
-    total_regex = r'(合計|小計|ノヽ言十|消費税).*[0-9]*'
+    total_regex = r'(合計|小計|ノヽ言十|消費税|対象計|お釣り*|外税対象).*[0-9]*'
     item_price_regex = r'([0-9]|\*|＊|※|[a-z]|[A-Z])\Z'  # 末尾が数字か軽減税率の記号かアルファベット（数字が読み取れていない場合用）
     reduced_tax_regex = r'(\*|＊|※|W|w)'
     top_num_regex = r'^[0-9]*'
