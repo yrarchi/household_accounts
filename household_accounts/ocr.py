@@ -11,7 +11,7 @@ from get_file_path_list import get_input_path_list
 
 
 class OcrReceipt:
-    date_regex = r'.{4}(/|年).{1,2}(/|月)[0-9]{1,2}'
+    date_regex = r'([0-9]|[a-z]|[A-Z]){4}(/|-|年)([0-9]|[a-z]|[A-Z]){1,2}(/|-|月)([0-9]|[a-z]|[A-Z]){1,2}'  # 英字は数字が読み取れていない場合用
     total_regex = r'(合計|小計|ノヽ言十|消費税|対象計|お釣り*|外税対象).*[0-9]*'
     item_price_regex = r'([0-9]|[a-z]|[A-Z]).{0,1}\Z'  # 末尾が数字か軽減税率の記号か英字（英字は数字が読み取れていない場合用）
     reduced_tax_regex = r'(\*|＊|※|W|w)'
@@ -59,10 +59,16 @@ class OcrReceipt:
 
 
     def get_payment_date(self, content):
-        payment_date = [re.search(self.date_regex, s).group() for s in content if re.search(self.date_regex+r'(\(|日)', s)]
-        payment_date = payment_date[0] if payment_date != [] else '2000/01/01'
-        payment_date = re.sub(r'(年|月)', r'/', payment_date)
-        payment_date = datetime.strptime(payment_date, '%Y/%m/%d').strftime('%Y/%m/%d')
+        payment_date = [re.search(self.date_regex, s).group() for s in content if re.search(self.date_regex, s)]
+        payment_date = [d for d in payment_date if re.search(r'[^0|^O|^o]', d[0])][0] if payment_date != [] else ''  # 電話番号避け 0から始まる数字列ははねる
+        for before, after in zip(self.conversion_num_before, self.conversion_num_after):
+            payment_date = re.sub(before, after, payment_date)
+        payment_date = re.sub(r'(年|月|-)', r'/', payment_date)
+        payment_date = re.sub(r'[^0-9|^/]', r'', payment_date)
+        try:
+            payment_date = datetime.strptime(payment_date, '%Y/%m/%d').strftime('%Y/%m/%d')
+        except ValueError:
+            payment_date = ''
         return payment_date
 
 
@@ -122,16 +128,22 @@ class OcrReceipt:
     
 
     def exclude_unnecessary_row(self):
+        def delete_unnecessary_row(index_unnecessary):
+            if len(index_unnecessary) > 0:
+                for index in sorted(index_unnecessary, reverse=True):
+                    del self.price[index]
+                    del self.item[index]
+                    del self.reduced_tax_rate_flg[index]
+                    del self.discount[index]
+
+        index_empty_price = [i for i, p in enumerate(self.price) if p=='']  # 価格がない
+        delete_unnecessary_row(index_empty_price)  # 以下の判定をするために価格がない場合を先に消す
+
         index_not_price = [i for i, p in enumerate(self.price) if p[0]=='0']  # 価格が0から始まっている
         index_high_price = [i for i, p in enumerate(self.price) if int(p)>1000000]  # 10万円以上
         index_empty_item = [i for i, p in enumerate(self.item) if p=='']  # 品目名がない
         index_unnecessary = set(index_not_price + index_high_price + index_empty_item)
-        if len(index_unnecessary) > 0:
-            for index in sorted(index_unnecessary, reverse=True):
-                del self.price[index]
-                del self.item[index]
-                del self.reduced_tax_rate_flg[index]
-                del self.discount[index]
+        delete_unnecessary_row(index_unnecessary)
 
 
 def translate_item_fixes(item_list):
