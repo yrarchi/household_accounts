@@ -41,6 +41,8 @@ class GetReceiptContours():
 
 
     def draw_contours(self):
+        if len(self.approx_contours) == 0:
+            sys.exit('画像からレシートの外枠を検知できなかったので終了します')
         copy_input_file = self.input_file.copy()
         draw_contours_file = cv2.drawContours(copy_input_file, self.approx_contours, -1, (0, 0, 255, 255), 10)
         cv2.imwrite('{}/write_contours_{}.png'.format(self.interim_path, self.input_filename), draw_contours_file)
