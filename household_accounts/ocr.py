@@ -60,7 +60,10 @@ class OcrReceipt:
 
     def get_payment_date(self, content):
         payment_date = [re.search(self.date_regex, s).group() for s in content if re.search(self.date_regex, s)]
-        payment_date = [d for d in payment_date if re.search(r'[^0|^O|^o]', d[0])][0] if payment_date != [] else ''  # 電話番号避け 0から始まる数字列ははねる
+        try:
+            payment_date = [d for d in payment_date if re.search(r'[^0|^O|^o]', d[0])][0]  # 電話番号避け 0から始まる数字列ははねる
+        except IndexError:
+            payment_date = ''
         for before, after in zip(self.conversion_num_before, self.conversion_num_after):
             payment_date = re.sub(before, after, payment_date)
         payment_date = re.sub(r'(年|月|-)', r'/', payment_date)
