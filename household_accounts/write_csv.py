@@ -30,7 +30,7 @@ def write_diff_to_csv(csv_path, trans):
 def write_item_fixes(item_ocr, item_places):
     item_before = item_ocr
     item_after = [s.get() for s in item_places]
-    item_fix = [(before, after) for before, after in zip(item_before, item_after) if before != after]
+    item_fix = [(before, after) for before, after in zip(item_before, item_after) if before != after != '']
     csv_path = os.path.join(os.path.dirname(__file__), '../csv/learning_file/item_ocr_fix.csv')
     write_diff_to_csv(csv_path, item_fix)
 
