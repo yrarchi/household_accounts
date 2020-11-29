@@ -36,7 +36,8 @@ class GetReceiptContours():
             area = cv2.contourArea(cnt)
             if arclen != 0 and self.img_size*0.02 < area < self.img_size*0.99:
                 approx_contour = cv2.approxPolyDP(cnt, epsilon=0.1*arclen, closed=True)
-                approx_contours.append(approx_contour)
+                if len(approx_contour) >= 4:  # 四角形として検知できていない場合は無視する
+                    approx_contours.append(approx_contour)
         return approx_contours
 
 
