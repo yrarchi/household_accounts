@@ -62,12 +62,14 @@ class GetEachReceiptImg(GetReceiptContours):
         corner_list = [self.approx_contours[receipt_no][i][0] for i in range(4)]
         corner_x = list(map(lambda x: x[0], corner_list))
         corner_y = list(map(lambda x: x[1], corner_list))
-        
+
         west_1, west_2 = corner_x.index(sorted(corner_x)[0]), corner_x.index(sorted(corner_x)[1]) # 左側2点のインデックス
+        if west_1 == west_2:
+            west_1, west_2 = [i for i, x in enumerate(corner_x) if x == sorted(corner_x)[0]]
         north_west = west_1 if corner_y[west_1] > corner_y[west_2] else west_2  # 左上の点のインデックス
         south_west = west_2 if west_1 == north_west else west_1
 
-        east_1, east_2 = corner_x.index(sorted(corner_x)[2]), corner_x.index(sorted(corner_x)[3])
+        east_1, east_2 = [i for i in range(len(corner_x)) if i not in [west_1, west_2]]
         north_east = east_1 if corner_y[east_1] > corner_y[east_2] else east_2
         south_east = east_2 if east_1 == north_east else east_1
 
