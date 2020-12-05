@@ -142,7 +142,7 @@ class OcrReceipt:
         index_empty_price = [i for i, p in enumerate(self.price) if p=='']  # 価格がない
         delete_unnecessary_row(index_empty_price)  # 以下の判定をするために価格がない場合を先に消す
 
-        index_not_price = [i for i, p in enumerate(self.price) if p[0]=='0']  # 価格が0から始まっている
+        index_not_price = [i for i, p in enumerate(self.price) if p[0]=='00']  # 価格が00から始まっている
         index_high_price = [i for i, p in enumerate(self.price) if int(p)>1000000]  # 10万円以上
         index_empty_item = [i for i, p in enumerate(self.item) if p=='']  # 品目名がない
         index_unnecessary = set(index_not_price + index_high_price + index_empty_item)
