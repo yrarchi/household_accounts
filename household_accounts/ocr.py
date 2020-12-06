@@ -113,10 +113,10 @@ class OcrReceipt:
 
     def extract_discount(self):
         discount = [0] * len(self.item)
-        index_discount = [self.item.index(s) for s in self.item if re.search(self.discount_regex, s)]
+        index_discount = [i for i, s in enumerate(self.item) if re.search(self.discount_regex, s)]
         if len(index_discount) > 0:
             for i in index_discount:
-                discount[i-1] = self.price[i]
+                discount[i-1] = self.price[i] if self.price[i][0] == '-' else '-'+self.price[i]
             for i in sorted(index_discount, reverse=True):  # indexがずれるので上のforループと分けている
                 del self.price[i]
                 del self.item[i]
