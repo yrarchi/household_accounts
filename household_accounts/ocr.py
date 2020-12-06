@@ -50,9 +50,9 @@ class OcrReceipt:
         content = []
         for row in receipt_content:
             index = [r.span() for r in re.finditer(r' [0-9]( .{0, 1})*', row)]
-            index_separator_a = [index[-1][0] if index != [] else 1]
-            index_separator_b = [row.rfind('\\') if('\\' in row) else 1]
-            index_separator = max(index_separator_a + index_separator_b)
+            index_separator_a = [index[-1][0] if index != [] else len(row)]
+            index_separator_b = [row.rfind('\\') if('\\' in row) else len(row)]
+            index_separator = min(index_separator_a + index_separator_b)
             row_en = row[:index_separator] + self.separator + row[index_separator+1:]
             row_en = re.sub(r' ', r'', row_en)
             row = re.sub(r' ', r'', row)
@@ -114,7 +114,10 @@ class OcrReceipt:
     def extract_discount(self):
         discount = [0] * len(self.item)
         index_discount = [i for i, s in enumerate(self.item) if re.search(self.discount_regex, s)]
+
         if len(index_discount) > 0:
+            index_discount.insert(0, -1)
+            index_discount = [index_discount[i] for i in range(1, len(index_discount)) if index_discount[i-1]+1 < index_discount[i]]  # 割引行が連続していたら除外
             for i in index_discount:
                 discount[i-1] = self.price[i] if self.price[i][0] == '-' else '-'+self.price[i]
             for i in sorted(index_discount, reverse=True):  # indexがずれるので上のforループと分けている
