@@ -24,7 +24,7 @@ class GetReceiptContours():
 
     def find_contours(self):
         gray_img = cv2.cvtColor(self.input_file, cv2.COLOR_BGR2GRAY)
-        _, th1 = cv2.threshold(gray_img, 127, 255, cv2.THRESH_BINARY_INV)
+        _, th1 = cv2.threshold(gray_img, 127, 255, cv2.THRESH_OTSU)
         contours, _ = cv2.findContours(th1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         return contours
 
@@ -36,7 +36,7 @@ class GetReceiptContours():
             area = cv2.contourArea(cnt)
             if arclen != 0 and self.img_size*0.02 < area < self.img_size*0.9:
                 approx_contour = cv2.approxPolyDP(cnt, epsilon=0.01*arclen, closed=True)
-                if len(approx_contour) >= 4:  # 四角形として検知できていない場合は無視する
+                if len(approx_contour) == 4:  # 四角形として検知できていない場合は無視する
                     approx_contours.append(approx_contour)
         return approx_contours
 
