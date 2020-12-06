@@ -49,8 +49,8 @@ class OcrReceipt:
         content_en = []
         content = []
         for row in receipt_content:
-            index = [r.span() for r in re.finditer(r' [0-9]( .{0, 1})*', row)]
-            index_separator_a = [index[-1][0] if index != [] else len(row)]
+            index = [r.start() for r in re.finditer(r' -*[0-9]+( .{0, 1})*', row)]
+            index_separator_a = [index[-1] if index != [] else len(row)]
             index_separator_b = [row.rfind('\\') if('\\' in row) else len(row)]
             index_separator = min(index_separator_a + index_separator_b)
             row_en = row[:index_separator] + self.separator + row[index_separator+1:]
