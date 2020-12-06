@@ -64,7 +64,7 @@ class OcrReceipt:
     def get_payment_date(self, content):
         payment_date = [re.search(self.date_regex, s).group() for s in content if re.search(self.date_regex, s)]
         try:
-            payment_date = [d for d in payment_date if re.search(r'[^0|^O|^o]', d[0])][0]  # 電話番号避け 0から始まる数字列ははねる
+            payment_date = [d for d in payment_date if re.search(r'[^0|^O|^o]', d[0])][-1]  # 電話番号避け 0から始まる数字列ははねる
         except IndexError:
             payment_date = ''
         for before, after in zip(self.conversion_num_before, self.conversion_num_after):
@@ -87,7 +87,7 @@ class OcrReceipt:
 
     def get_main_contents(self, content, content_en):
         try:
-            start_low = [content.index(s) for s in content if re.search(self.date_regex, s)][0] + 1  # payment_dateの次の行が開始行とする
+            start_low = [content.index(s) for s in content if re.search(self.date_regex, s)][-1] + 1  # payment_dateの次の行が開始行とする
         except IndexError:
             start_low = 0  # payment_dateがない場合は最初の行を開始行とする
         sum_lows = [content.index(s) for s in content if re.search(self.total_regex, s)]
