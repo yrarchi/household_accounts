@@ -13,7 +13,7 @@ from get_file_path_list import get_input_path_list
 class OcrReceipt:
     date_regex = r'([0-9]|[a-z]|[A-Z]){4}(/|-|年)([0-9]|[a-z]|[A-Z]){1,2}(/|-|月)([0-9]|[a-z]|[A-Z]){1,2}'  # 英字は数字が読み取れていない場合用
     total_regex = r'(合計|小計|ノヽ言十|消費税|対象計|お釣り*|外税対象).*[0-9]*'
-    item_price_regex = r'([0-9]|[a-z]|[A-Z]).{0,1}\Z'  # 末尾が数字か軽減税率の記号か英字（英字は数字が読み取れていない場合用）
+    item_price_regex = r'([0-9]|[a-z]|[A-Z]).{0,2}\Z'  # 末尾が数字か軽減税率の記号か英字（英字は数字が読み取れていない場合用）
     reduced_tax_regex = r'(\*|＊|※|W|w)'
     top_num_regex = r'^[0-9]*'
     tax_ex_regex = r'外税'
@@ -49,7 +49,10 @@ class OcrReceipt:
         content_en = []
         content = []
         for row in receipt_content:
-            index_separator = [row.rfind('\\') if('\\' in row) else row.rfind(' ')][0]
+            index = [r.span() for r in re.finditer(r' [0-9]( .{0, 1})*', row)]
+            index_separator_a = [index[-1][0] if index != [] else 1]
+            index_separator_b = [row.rfind('\\') if('\\' in row) else 1]
+            index_separator = max(index_separator_a + index_separator_b)
             row_en = row[:index_separator] + self.separator + row[index_separator+1:]
             row_en = re.sub(r' ', r'', row_en)
             row = re.sub(r' ', r'', row)
