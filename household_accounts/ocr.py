@@ -15,7 +15,7 @@ class OcrReceipt:
     total_regex = r'(合計|小計|ノヽ言十|消費税|対象計|お釣り*|外税対象).*[0-9]*'
     item_price_regex = r'([0-9]|[a-z]|[A-Z]).{0,2}\Z'  # 末尾が数字か軽減税率の記号か英字（英字は数字が読み取れていない場合用）
     reduced_tax_regex = r'(\*|＊|※|W|w)'
-    top_num_regex = r'^[0-9]*'
+    top_num_regex = r'^[0-9]{3,}'
     tax_ex_regex = r'外税'
     tax_in_regex = r'(内税|内消費税等)'
     conversion_num_before = ['O', 'U', 'b', 'Z', '<', 'i']  # 英字として認識されている価格を変換するため
@@ -49,7 +49,7 @@ class OcrReceipt:
         content_en = []
         content = []
         for row in receipt_content:
-            index = [r.start() for r in re.finditer(r' -*[0-9]+( .{0, 1})*', row)]
+            index = [r.start() for r in re.finditer(r' -*([0-9]|[A-Z]|[a-z])+( .{0, 1})*', row)]
             index_separator_a = [index[-1] if index != [] else len(row)]
             index_separator_b = [row.rfind('\\') if('\\' in row) else len(row)]
             index_separator = min(index_separator_a + index_separator_b)
