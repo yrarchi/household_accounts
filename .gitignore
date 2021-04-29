@@ -21,3 +21,5 @@
 !/img/unproccessed/
 /img/unproccessed/*
 !/img/unproccessed/.gitkeep
+
+/notebook/.ipynb_checkpoints
