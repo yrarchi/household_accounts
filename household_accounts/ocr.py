@@ -126,7 +126,7 @@ class OcrReceipt:
             index_discount.insert(0, -1)
             index_discount = [index_discount[i] for i in range(1, len(index_discount)) if index_discount[i-1]+1 < index_discount[i]]  # 割引行が連続していたら除外
             for i in index_discount:
-                discount[i-1] = abs(int(self.price[i]))
+                discount[i-1] = abs(int(self.price[i])) if len(self.price[i]) > 0 else 0
             for i in sorted(index_discount, reverse=True):  # indexがずれるので上のforループと分けている
                 del self.price[i]
                 del self.item[i]
