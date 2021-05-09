@@ -32,7 +32,7 @@ class OcrReceipt:
         self.reduced_tax_rate_flg = self.get_reduced_tax_rate_flg(main_contents)
         self.item, price = self.separate_item_and_price(main_contents)
         self.price = self.modify_price(price)
-        self.discount = self.extract_discount()
+        self.discount = self.apply_discount()
         self.exclude_unnecessary_row()
 
 
@@ -109,23 +109,6 @@ class OcrReceipt:
         item = [re.sub(self.top_num_regex, r'', s) for s in item]
         price = [s[s.find(self.separator)+len(self.separator):] for s in item_and_price]  # separatorより右が価格
         return item, price
-    
-
-    def extract_discount(self):
-        discount = [0] * len(self.item)
-        index_discount = [i for i, s in enumerate(self.item) if re.search(self.discount_regex, s)]
-
-        if len(index_discount) > 0:
-            index_discount.insert(0, -1)
-            index_discount = [index_discount[i] for i in range(1, len(index_discount)) if index_discount[i-1]+1 < index_discount[i]]  # 割引行が連続していたら除外
-            for i in index_discount:
-                discount[i-1] = self.price[i] if self.price[i][0] == '-' else '-'+self.price[i]
-            for i in sorted(index_discount, reverse=True):  # indexがずれるので上のforループと分けている
-                del self.price[i]
-                del self.item[i]
-                del self.reduced_tax_rate_flg[i]
-                del discount[i]
-        return discount
 
 
     def modify_price(self, price):
@@ -134,7 +117,24 @@ class OcrReceipt:
             price = [re.sub(before, after, p) for p in price]
         price = [re.sub(r'[^0-9]', r'', p) for p in price]
         return price
-    
+
+
+    def apply_discount(self):
+        discount = [0] * len(self.item)
+        index_discount = [i for i, s in enumerate(self.item) if re.search(self.discount_regex, s)]
+        if len(index_discount) > 0:
+            index_discount.insert(0, -1)
+            index_discount = [index_discount[i] for i in range(1, len(index_discount)) if index_discount[i-1]+1 < index_discount[i]]  # 割引行が連続していたら除外
+            for i in index_discount:
+                discount[i-1] = abs(int(self.price[i]))
+            self.price = [int(price) - discount for price, discount in zip(self.price, discount)]
+            for i in sorted(index_discount, reverse=True):  # indexがずれるので上のforループと分けている
+                del self.price[i]
+                del self.item[i]
+                del self.reduced_tax_rate_flg[i]
+                del discount[i]
+        return discount
+
 
     def exclude_unnecessary_row(self):
         def delete_unnecessary_row(index_unnecessary):
@@ -147,11 +147,10 @@ class OcrReceipt:
 
         index_empty_price = [i for i, p in enumerate(self.price) if p=='']  # 価格がない
         delete_unnecessary_row(index_empty_price)  # 以下の判定をするために価格がない場合を先に消す
-
-        index_not_price = [i for i, p in enumerate(self.price) if p[0]=='00']  # 価格が00から始まっている
-        index_high_price = [i for i, p in enumerate(self.price) if int(p)>1000000]  # 10万円以上
-        index_empty_item = [i for i, p in enumerate(self.item) if p=='']  # 品目名がない
-        index_unnecessary = set(index_not_price + index_high_price + index_empty_item)
+        self.price = list(map(int, self.price))
+        index_high_price = [i for i, price in enumerate(self.price) if price>1000000]  # 10万円以上
+        index_empty_item = [i for i, item in enumerate(self.item) if item=='']  # 品目名がない
+        index_unnecessary = set(index_high_price + index_empty_item)
         delete_unnecessary_row(index_unnecessary)
 
 
