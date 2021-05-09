@@ -21,7 +21,7 @@ class OcrReceipt:
     conversion_num_before = ['O', 'U', 'b', 'Z', '<', 'i']  # 英字として認識されている価格を変換するため
     conversion_num_after = ['0', '0', '6', '2', '2', '1']
     separator = r'区切位置'
-    discount_regex = r'(割り*引|値引)'
+    discount_regex = r'(割り*引|値引|まとめ買い*)'
 
 
     def __init__(self, input_file):
