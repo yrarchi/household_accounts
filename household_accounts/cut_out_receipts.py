@@ -17,15 +17,25 @@ class GetReceiptContours():
         self.input_filename = os.path.splitext(os.path.basename(input_path))[0]
         self.height, self.width, _ = self.input_file.shape
         self.img_size = self.height * self.width
+        self.binary_img = self.binarize()
         self.contours = self.find_contours()
         self.approx_contours = self.approximate_contours()
         self.draw_contours()
 
 
-    def find_contours(self):
+    def binarize(self):
         gray_img = cv2.cvtColor(self.input_file, cv2.COLOR_BGR2GRAY)
-        _, th1 = cv2.threshold(gray_img, 127, 255, cv2.THRESH_OTSU)
+        binary_img = cv2.adaptiveThreshold(gray_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 255, 2)
+        modified_binary_img = cv2.medianBlur(binary_img, 9)
+        return modified_binary_img
+
+
+    def find_contours(self):
+        _, th1 = cv2.threshold(self.binary_img, 127, 255, cv2.THRESH_OTSU)
         contours, _ = cv2.findContours(th1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        copy_input_file = self.input_file.copy()
+        draw_contours_file = cv2.drawContours(copy_input_file, contours, -1, (0, 0, 255, 255), 10)
+        cv2.imwrite('{}/write_all_contours_{}.png'.format(self.interim_path, self.input_filename), draw_contours_file)
         return contours
 
 
