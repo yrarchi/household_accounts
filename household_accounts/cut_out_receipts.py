@@ -1,4 +1,5 @@
 import cv2
+import math
 import numpy as np
 import os
 import re
@@ -20,6 +21,7 @@ class GetReceiptContours():
         self.binary_img = self.binarize()
         self.contours = self.find_contours()
         self.approx_contours = self.approximate_contours()
+        self.rectangle_contours = self.limited_to_rectangles()
         self.draw_contours()
 
 
@@ -38,7 +40,7 @@ class GetReceiptContours():
         cv2.imwrite('{}/write_all_contours_{}.png'.format(self.interim_path, self.input_filename), draw_contours_file)
         return contours
 
-
+    
     def approximate_contours(self):
         approx_contours = []
         for i, cnt in enumerate(self.contours):
@@ -46,23 +48,45 @@ class GetReceiptContours():
             area = cv2.contourArea(cnt)
             if arclen != 0 and self.img_size*0.02 < area < self.img_size*0.9:
                 approx_contour = cv2.approxPolyDP(cnt, epsilon=0.01*arclen, closed=True)
-                if len(approx_contour) == 4:  # 四角形として検知できていない場合は無視する
-                    approx_contours.append(approx_contour)
+                approx_contours.append(approx_contour)
         return approx_contours
+    
 
+    def limited_to_rectangles(self):
+        def get_max_abs_cosine(contour):
+            cos_list = []
+            for i in range(4):
+                points = [contour[i], contour[(i+1)%4], contour[(i+3)%4]]
+                vec_1 = points[1] - points[0]
+                vec_2 = points[2] - points[0]
+                norm_1 = np.linalg.norm(vec_1)
+                norm_2 = np.linalg.norm(vec_2)
+                inner_product = np.inner(vec_1, vec_2)
+                cos = inner_product / (norm_1 * norm_2)
+                cos_list.append(cos)
+            return max(list(map(abs, cos_list)))
+
+        rectangle_contours = []
+        for contour in self.approx_contours:
+            if len(contour) == 4:  # 頂点が4点の輪郭のみにする
+                max_abs_cos = get_max_abs_cosine(contour)
+                if max_abs_cos < math.cos(math.radians(80)):  # なす角が80°~100°のみにする
+                    rectangle_contours.append(contour)
+        return rectangle_contours
+                
 
     def draw_contours(self):
-        if len(self.approx_contours) == 0:
+        if len(self.rectangle_contours) == 0:
             sys.exit('画像からレシートの外枠を検知できなかったので終了します')
         copy_input_file = self.input_file.copy()
-        draw_contours_file = cv2.drawContours(copy_input_file, self.approx_contours, -1, (0, 0, 255, 255), 10)
+        draw_contours_file = cv2.drawContours(copy_input_file, self.rectangle_contours, -1, (0, 0, 255, 255), 10)
         cv2.imwrite('{}/write_contours_{}.png'.format(self.interim_path, self.input_filename), draw_contours_file)
 
 
 class GetEachReceiptImg(GetReceiptContours):
     def __init__(self, input_path):
         super().__init__(input_path)
-        for i in range(len(self.approx_contours)):
+        for i in range(len(self.rectangle_contours)):
             receipt_no = i
             self.sorted_corner_list = self.get_sorted_corner_list(receipt_no)
             self.width, self.height = self.get_length_receipt()
@@ -70,7 +94,7 @@ class GetEachReceiptImg(GetReceiptContours):
 
 
     def get_sorted_corner_list(self, receipt_no):
-        corner_list = [self.approx_contours[receipt_no][i][0] for i in range(4)]
+        corner_list = [self.rectangle_contours[receipt_no][i][0] for i in range(4)]
         corner_x = list(map(lambda x: x[0], corner_list))
         corner_y = list(map(lambda x: x[1], corner_list))
 
