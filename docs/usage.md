@@ -6,12 +6,12 @@ https://github.com/tesseract-ocr/tesseract を参照してTesseractのインス�
 ※ 言語ファイルは https://github.com/tesseract-ocr/tessdata_fast のjpn.traineddataを使用しています。
 
 2. Pythonのライブラリのインストール  
-パッケージ管理に[Pipenv](https://pipenv-ja.readthedocs.io/ja/translate-ja/)を利用しています。
-PipfileおよびPipfile.lockから環境を再現します。
-Pipenvのセットアップ後、使用するライブラリのインストールを行います。
+パッケージ管理に[Poetry](https://python-poetry.org/)を利用しています。
+pyproject.tomlから環境を再現します。
+Poetryのセットアップ後、使用するライブラリのインストールを行います。
 
 ```
-$ pipenv sync
+$ poetry install
 ```
 
 3. レシートの画像の設置  
@@ -22,8 +22,7 @@ $ pipenv sync
 以下を実行します。  
 
 ```
-$ pipenv shell  # 仮想環境を起動
-$ python household_account
+$ poetry run python household_accounts
 ```
 
 #### 詳細設定
