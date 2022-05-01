@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "household_accounts"
+version = "0.1.0"
+description = ""
+authors = ["yrarchi <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+pyocr = "0.8"
+opencv-python = "4.5.1.48"
+
+[tool.poetry.dev-dependencies]
+matplotlib = "3.4.1"
+jupyterlab = "3.2.9"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
