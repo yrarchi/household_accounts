@@ -41,11 +41,10 @@ class OcrReceipt:
         receipt_ocr = tool.image_to_string(
             Image.open(input_file),
             lang='jpn',
-            builder=pyocr.builders.LineBoxBuilder(tesseract_layout=4)
+            builder=pyocr.builders.TextBuilder(tesseract_layout=4)
             )
         
-        receipt_content = list(map(lambda x: x.content, receipt_ocr))
-        receipt_content = [i for i in receipt_content if i != '']
+        receipt_content = receipt_ocr.split("\n")
         content_en = []
         content = []
         for row in receipt_content:
