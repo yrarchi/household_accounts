@@ -2,7 +2,6 @@ import cv2
 import math
 import numpy as np
 import os
-import re
 import sys
 
 from get_file_path_list import get_input_path_list
