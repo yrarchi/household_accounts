@@ -1,6 +1,3 @@
-import datetime
-import csv
-import os
 import re
 import tkinter as tk
 import tkinter.ttk as ttk
