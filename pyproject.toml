@@ -13,6 +13,7 @@ opencv-python = "4.5.1.48"
 matplotlib = "3.4.1"
 jupyterlab = "3.2.9"
 black = "^22.3.0"
+flake8 = "^4.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
