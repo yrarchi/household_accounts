@@ -6,7 +6,7 @@ import sys
 def get_input_path_list(relative_path, extension):
     current_path = os.path.dirname(__file__)
     input_filename_list = os.listdir(os.path.join(current_path, relative_path))
-    filename = r"\.({}|{})$".format(extension, extension.upper())
+    filename = r'\.({}|{})$'.format(extension, extension.upper())
     input_filename_extension_list = [
         f for f in input_filename_list if re.search(filename, f)
     ]
