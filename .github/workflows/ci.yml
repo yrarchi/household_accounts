@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+    paths:
+      - '**.py'
+jobs:
+  lint_and_format:
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.7.8'
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+          echo "$HOME/.local/bin" >>a $GITHUB_PATH
+      - name: Install Dependencies
+        run: poetry install --no-interaction
+      - name: Lint with flake8
+        run: poetry run flake8 .
+      - name: Format with black
+        run: poetry run black --check .
