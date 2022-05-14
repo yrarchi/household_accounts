@@ -1,8 +1,6 @@
 name: CI
 on:
   push:
-    paths:
-      - '**.py'
 jobs:
   lint_and_format:
     runs-on: macos-10.15
@@ -14,7 +12,7 @@ jobs:
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python -
-          echo "$HOME/.local/bin" >>a $GITHUB_PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Install Dependencies
         run: poetry install --no-interaction
       - name: Lint with flake8
