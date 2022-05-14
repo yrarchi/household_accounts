@@ -5,6 +5,12 @@ jobs:
   lint_and_format:
     runs-on: macos-10.15
     steps:
+      - name: Check values
+        run: |
+          echo $GITHUB_PATH
+          echo $GITHUB_WORKSPACE
+          pwd
+          ls -a
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
@@ -13,9 +19,21 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Check values
+        run: |
+          echo $GITHUB_PATH
+          echo $GITHUB_WORKSPACE
+          pwd
+          ls -a
       - name: Install Dependencies
         run: poetry install --no-interaction
       - name: Lint with flake8
         run: poetry run flake8 .
       - name: Format with black
         run: poetry run black --check .
+      - name: Check values
+        run: |
+          echo $GITHUB_PATH
+          echo $GITHUB_WORKSPACE
+          pwd
+          ls -a
