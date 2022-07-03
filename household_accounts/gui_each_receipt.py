@@ -307,9 +307,11 @@ class ItemFrame:
             sum_price_str_labal.grid(
                 row=self.num_item + 2, column=3, columnspan=2, sticky=tk.E
             )
-
             price_sum_labal = tk.Label(self.frame, text=sum_price)
             price_sum_labal.grid(row=self.num_item + 2, column=5, sticky=tk.E, ipadx=20)
+
+            self.sum_price_str_labal = sum_price_str_labal
+            self.price_sum_labal = price_sum_labal
 
         price_tax_in_list, sum_price = self.calc_price_tax_in()
         show_item_prices_tax_in(price_tax_in_list)
@@ -319,8 +321,8 @@ class ItemFrame:
         def recalc():
             self.show_price_tax_in()
 
-        calc_button = ttk.Button(self.frame, text="再計算", command=recalc)
-        calc_button.grid(
+        button_recalculation = ttk.Button(self.frame, text="再計算", command=recalc)
+        button_recalculation.grid(
             row=self.num_item + 3,
             column=4,
             rowspan=2,
@@ -328,17 +330,25 @@ class ItemFrame:
             sticky=tk.E,
             ipadx=20,
         )
+        self.button_recalculation = button_recalculation
 
     def add_row(self):
         places = self.place_items(self.num_item + 1)
         for name in self.item_names:
             self.item_places[name].append(places[name])
         self.num_item += 1
+        print("add_row", self.num_item)
+
+        self.sum_price_str_labal.destroy()
+        self.price_sum_labal.destroy()
         self.show_price_tax_in()
+
+        self.button_recalculation.destroy()
         self.show_button_recalculation()
 
     def show_button_add_row(self):
         add_row_button = ttk.Button(self.frame, text="行を増やす", command=self.add_row)
+        print("show_button", self.num_item)
         add_row_button.grid(
             row=self.num_item + 8,
             column=1,
