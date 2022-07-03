@@ -350,7 +350,7 @@ class ItemFrame:
         add_row_button = ttk.Button(self.frame, text="行を増やす", command=self.add_row)
         print("show_button", self.num_item)
         add_row_button.grid(
-            row=self.num_item + 8,
+            row=self.num_item + 8,  # 最大8行追加できる
             column=1,
             rowspan=1,
             columnspan=1,
