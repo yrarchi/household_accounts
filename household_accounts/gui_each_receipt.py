@@ -153,6 +153,7 @@ class ItemFrame:
         self.num_item = len(self.ocr_result["item"])
         self.show_item_column()
         self.item_places = self.insert_ocr_value()
+        self.show_button_add_row()
         self.show_price_tax_in()
         self.show_button_recalculation()
 
@@ -324,6 +325,25 @@ class ItemFrame:
             column=4,
             rowspan=2,
             columnspan=2,
+            sticky=tk.E,
+            ipadx=20,
+        )
+
+    def add_row(self):
+        places = self.place_items(self.num_item + 1)
+        for name in self.item_names:
+            self.item_places[name].append(places[name])
+        self.num_item += 1
+        self.show_price_tax_in()
+        self.show_button_recalculation()
+
+    def show_button_add_row(self):
+        add_row_button = ttk.Button(self.frame, text="行を増やす", command=self.add_row)
+        add_row_button.grid(
+            row=self.num_item + 8,
+            column=1,
+            rowspan=1,
+            columnspan=1,
             sticky=tk.E,
             ipadx=20,
         )
