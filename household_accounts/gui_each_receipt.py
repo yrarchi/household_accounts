@@ -337,7 +337,6 @@ class ItemFrame:
         for name in self.item_names:
             self.item_places[name].append(places[name])
         self.num_item += 1
-        print("add_row", self.num_item)
 
         self.sum_price_str_labal.destroy()
         self.price_sum_labal.destroy()
@@ -348,7 +347,6 @@ class ItemFrame:
 
     def show_button_add_row(self):
         add_row_button = ttk.Button(self.frame, text="行を増やす", command=self.add_row)
-        print("show_button", self.num_item)
         add_row_button.grid(
             row=self.num_item + 8,  # 最大8行追加できる
             column=1,
