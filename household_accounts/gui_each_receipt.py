@@ -152,7 +152,7 @@ class ItemFrame:
         self.tax_place = tax_place
         self.num_item = len(self.ocr_result["item"])
         self.show_item_column()
-        self.item_places = self.get_place_items()
+        self.item_places = self.insert_ocr_value()
         self.show_price_tax_in()
         self.show_button_recalculation()
 
@@ -161,50 +161,51 @@ class ItemFrame:
             date_label = tk.Label(self.frame, text=text)
             date_label.grid(row=0, column=column)
 
-    def show_item_value(self, row):
+    def place_items(self, row):
         places = {}
         places["required"] = tk.IntVar(value=1)
         required_flg = ttk.Checkbutton(self.frame, variable=places["required"])
-        required_flg.grid(row=row + 1, column=0)
 
         places["item"] = tk.Entry(self.frame, width=25)
-        places["item"].insert(tk.END, self.ocr_result["item"][row])
-        places["item"].grid(row=row + 1, column=1)
-
         places["price"] = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
-        places["price"].grid(row=row + 1, column=2)
-        places["price"].insert(tk.END, self.ocr_result["price"][row])
-
         places["discount"] = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
-        places["discount"].grid(row=row + 1, column=3)
-        places["discount"].insert(tk.END, self.ocr_result["discount"][row])
 
         places["reduced_tax_rate"] = tk.IntVar(
-            value=self.ocr_result["reduced_tax_rate_flg"][row]
+            value=self.ocr_result["reduced_tax_rate_flg"][row - 1]
         )
         reduced_tax_rate_flg = ttk.Checkbutton(
             self.frame, variable=places["reduced_tax_rate"]
         )
-        reduced_tax_rate_flg.grid(row=row + 1, column=4)
 
         places["major_category"] = ttk.Combobox(self.frame, width=12)
         places["major_category"]["values"] = self.major_category_list
-        places["major_category"].insert(tk.END, self.ocr_result["major_category"][row])
-        places["major_category"].grid(
-            row=row + 1, column=6
-        )  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
-
         places["medium_category"] = ttk.Combobox(self.frame, width=12)
         places["medium_category"]["values"] = self.medium_category_list
-        places["medium_category"].insert(
-            tk.END, self.ocr_result["medium_category"][row]
-        )
-        places["medium_category"].grid(row=row + 1, column=7)
+
+        required_flg.grid(row=row, column=0)
+        places["item"].grid(row=row, column=1)
+        places["price"].grid(row=row, column=2)
+        places["discount"].grid(row=row, column=3)
+        reduced_tax_rate_flg.grid(row=row, column=4)
+        places["major_category"].grid(
+            row=row, column=6
+        )  # columnの数値が1つとんでいるのは別関数で税込価格を入れ込むため
+        places["medium_category"].grid(row=row, column=7)
 
         self.validate_item(places)
         self.validate_required(required_flg, places)
         self.validate_price(places["price"])
         return places
+
+    def insert_item_values(self, row, places):
+        for column in [
+            "item",
+            "price",
+            "discount",
+            "major_category",
+            "medium_category",
+        ]:
+            places[column].insert(tk.END, self.ocr_result[column][row])
 
     def validate_item(self, places):
         def item_validate(value):
@@ -256,12 +257,13 @@ class ItemFrame:
         price_box["validate"] = "focus"
         price_box["invalidcommand"] = price_invalid_cmd
 
-    def get_place_items(self):
+    def insert_ocr_value(self):
         item_places = {}
         for name in self.item_names:
             item_places[name] = []
         for row in range(self.num_item):
-            places = self.show_item_value(row)
+            places = self.place_items(row + 1)
+            self.insert_item_values(row, places)
             for name in self.item_names:
                 item_places[name].append(places[name])
         return item_places
