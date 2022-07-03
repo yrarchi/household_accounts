@@ -170,9 +170,7 @@ class ItemFrame:
         places["price"] = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
         places["discount"] = tk.Entry(self.frame, width=6, justify=tk.RIGHT)
 
-        places["reduced_tax_rate"] = tk.IntVar(
-            value=self.ocr_result["reduced_tax_rate_flg"][row - 1]
-        )
+        places["reduced_tax_rate"] = tk.IntVar()
         reduced_tax_rate_flg = ttk.Checkbutton(
             self.frame, variable=places["reduced_tax_rate"]
         )
@@ -206,6 +204,7 @@ class ItemFrame:
             "medium_category",
         ]:
             places[column].insert(tk.END, self.ocr_result[column][row])
+        places["reduced_tax_rate"].set(self.ocr_result["reduced_tax_rate_flg"][row])
 
     def validate_item(self, places):
         def item_validate(value):
