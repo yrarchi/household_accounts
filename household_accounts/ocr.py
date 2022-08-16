@@ -8,6 +8,7 @@ from datetime import datetime
 from PIL import Image
 
 from get_file_path_list import get_input_path_list
+from edit_csv import csv_reader
 
 
 class OcrReceipt:
@@ -221,13 +222,9 @@ def levenshtein_distances(input_word, words_history):
 def modify_item_name(items):
     LEVENSHTEIN_THRESHOLD = 0.5
 
-    csv_path = os.path.join(
-        os.path.dirname(__file__), "../csv/learning_file/item_ocr_fix.csv"
-    )
-    with open(csv_path, mode="r") as file:
-        reader = [row for row in csv.reader(file)]
-        ocr_history = [s[0] for s in reader]
-        item_history = [s[1] for s in reader]
+    reader = csv_reader("item_ocr_fix")
+    ocr_history = [s[0] for s in reader]
+    item_history = [s[1] for s in reader]
 
     item_fix = {}
     for i in range(len(items)):
@@ -242,14 +239,10 @@ def modify_item_name(items):
 
 
 def read_category():
-    csv_path = os.path.join(
-        os.path.dirname(__file__), "../csv/learning_file/category_fix.csv"
-    )
-    with open(csv_path, mode="r") as file:
-        reader = [row for row in csv.reader(file)]
-        item_read = [s[0] for s in reader]
-        major_read = [s[1] for s in reader]
-        medium_read = [s[2] for s in reader]
+    reader = csv_reader("category_fix")
+    item_read = [s[0] for s in reader]
+    major_read = [s[1] for s in reader]
+    medium_read = [s[2] for s in reader]
     return item_read, major_read, medium_read
 
 
