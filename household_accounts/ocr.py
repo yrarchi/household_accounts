@@ -1,5 +1,3 @@
-import csv
-import os
 import pyocr
 import pyocr.builders
 import re
