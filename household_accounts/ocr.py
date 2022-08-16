@@ -252,14 +252,14 @@ def determine_category(item, item_read, major_read, medium_read):
     return major_category, medium_category
 
 
-def group_category(item):
+def group_category(items):
     item_read, major_read, medium_read = read_category()
-    category = [
-        (determine_category(s, item_read, major_read, medium_read)) for s in item
+    categories = [
+        (determine_category(item, item_read, major_read, medium_read)) for item in items
     ]
-    major_category = [s[0] for s in category]
-    medium_category = [s[1] for s in category]
-    return major_category, medium_category
+    major_categories = [s[0] for s in categories]
+    medium_categories = [s[1] for s in categories]
+    return major_categories, medium_categories
 
 
 def summing_up_ocr_results(ocr, item_fix, major_category, medium_category):
