@@ -3,6 +3,19 @@ import datetime
 import os
 
 
+def parse_csv_path(file_name):
+    return os.path.join(
+        os.path.dirname(__file__), f"../csv/learning_file/{file_name}.csv"
+    )
+
+
+def csv_reader(file_name):
+    csv_path = parse_csv_path(file_name)
+    with open(csv_path, mode="r") as file:
+        reader = [row for row in csv.reader(file)]
+    return reader
+
+
 def write_modified_result(info_places, item_places):
     date = info_places["date"].get()
     shop = info_places["shop"].get()
@@ -35,9 +48,7 @@ def write_item_fixes(item_ocr, item_places):
         for before, after in zip(item_before, item_after)
         if before != after != ""
     ]
-    csv_path = os.path.join(
-        os.path.dirname(__file__), "../csv/learning_file/item_ocr_fix.csv"
-    )
+    csv_path = parse_csv_path("item_ocr_fix")
     write_diff_to_csv(csv_path, item_fix)
 
 
@@ -50,7 +61,5 @@ def write_category_fixes(item_places, major_category_places, medium_category_pla
         for item, major, medium in zip(item, major, medium)
         if major != "" or medium != ""
     ]
-    csv_path = os.path.join(
-        os.path.dirname(__file__), "../csv/learning_file/category_fix.csv"
-    )
+    csv_path = parse_csv_path("category_fix")
     write_diff_to_csv(csv_path, category_fix)

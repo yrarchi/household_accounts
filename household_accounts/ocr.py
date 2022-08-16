@@ -1,5 +1,3 @@
-import csv
-import os
 import pyocr
 import pyocr.builders
 import re
@@ -8,6 +6,7 @@ from datetime import datetime
 from PIL import Image
 
 from get_file_path_list import get_input_path_list
+from edit_csv import csv_reader
 
 
 class OcrReceipt:
@@ -187,27 +186,61 @@ class OcrReceipt:
         delete_unnecessary_row(index_unnecessary)
 
 
-def translate_item_fixes(item_list):
-    csv_path = os.path.join(
-        os.path.dirname(__file__), "../csv/learning_file/item_ocr_fix.csv"
-    )
-    with open(csv_path, mode="r") as file:
-        reader = [row for row in csv.reader(file)]
-        before = [s[0] for s in reader]
-        after = [s[1] for s in reader]
-    item_fix = [after[before.index(s)] if s in before else s for s in item_list]
+def levenshtein_distances(input_word, words_history):
+    INSERT_COST = 1
+    DELETE_COST = 1
+    SUBSTITUTE_COST = 1
+
+    distances = []
+    len_input = len(input_word)
+    for history_word in words_history:
+        len_history = len(history_word)
+        dp = [[0] * (len_history + 1) for _ in range(len_input + 1)]
+
+        for i in range(len_history + 1):
+            dp[0][i] = i * DELETE_COST
+        for i in range(len_input + 1):
+            dp[i][0] = i * INSERT_COST
+
+        for i_input in range(1, len_input + 1):
+            for i_history in range(1, len_history + 1):
+                insertion = dp[i_input - 1][i_history] + INSERT_COST
+                deletion = dp[i_input][i_history - 1] + DELETE_COST
+                substitution = (
+                    dp[i_input - 1][i_history - 1]
+                    if input_word[i_input - 1] == history_word[i_history - 1]
+                    else dp[i_input - 1][i_history - 1] + SUBSTITUTE_COST
+                )
+                dp[i_input][i_history] = min(insertion, deletion, substitution)
+        distance = dp[len_input][len_history] / max(len_input, len_history)
+        distances.append(distance)
+    return distances
+
+
+def modify_item_name(items):
+    LEVENSHTEIN_THRESHOLD = 0.5
+
+    reader = csv_reader("item_ocr_fix")
+    ocr_history = [s[0] for s in reader]
+    item_history = [s[1] for s in reader]
+
+    item_fix = []
+    for item in items:
+        distances = levenshtein_distances(item, ocr_history)
+        if min(distances) <= LEVENSHTEIN_THRESHOLD:
+            min_distance_index = distances.index(min(distances))
+            modify_item = ocr_history[min_distance_index]
+            item_fix.append(item_history[ocr_history.index(modify_item)])
+        else:
+            item_fix.append(item)
     return item_fix
 
 
 def read_category():
-    csv_path = os.path.join(
-        os.path.dirname(__file__), "../csv/learning_file/category_fix.csv"
-    )
-    with open(csv_path, mode="r") as file:
-        reader = [row for row in csv.reader(file)]
-        item_read = [s[0] for s in reader]
-        major_read = [s[1] for s in reader]
-        medium_read = [s[2] for s in reader]
+    reader = csv_reader("category_fix")
+    item_read = [s[0] for s in reader]
+    major_read = [s[1] for s in reader]
+    medium_read = [s[2] for s in reader]
     return item_read, major_read, medium_read
 
 
@@ -217,14 +250,14 @@ def determine_category(item, item_read, major_read, medium_read):
     return major_category, medium_category
 
 
-def group_category(item):
+def group_category(items):
     item_read, major_read, medium_read = read_category()
-    category = [
-        (determine_category(s, item_read, major_read, medium_read)) for s in item
+    categories = [
+        (determine_category(item, item_read, major_read, medium_read)) for item in items
     ]
-    major_category = [s[0] for s in category]
-    medium_category = [s[1] for s in category]
-    return major_category, medium_category
+    major_categories = [s[0] for s in categories]
+    medium_categories = [s[1] for s in categories]
+    return major_categories, medium_categories
 
 
 def summing_up_ocr_results(ocr, item_fix, major_category, medium_category):
@@ -252,7 +285,7 @@ def main():
     ocr_results = {}
     for i, input_file in enumerate(input_path_list):
         ocr = OcrReceipt(input_file)
-        item_fix = translate_item_fixes(ocr.item)
+        item_fix = modify_item_name(ocr.item)
         major_category, medium_category = group_category(item_fix)
         ocr_results[input_file] = summing_up_ocr_results(
             ocr, item_fix, major_category, medium_category
