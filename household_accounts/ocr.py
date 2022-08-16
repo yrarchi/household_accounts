@@ -226,15 +226,15 @@ def modify_item_name(items):
     ocr_history = [s[0] for s in reader]
     item_history = [s[1] for s in reader]
 
-    item_fix = {}
-    for i in range(len(items)):
-        distances = levenshtein_distances(items[i], ocr_history)
+    item_fix = []
+    for item in items:
+        distances = levenshtein_distances(item, ocr_history)
         if min(distances) <= LEVENSHTEIN_THRESHOLD:
             min_distance_index = distances.index(min(distances))
             modify_item = ocr_history[min_distance_index]
-            item_fix[i] = item_history[ocr_history.index(modify_item)]
+            item_fix.append(item_history[ocr_history.index(modify_item)])
         else:
-            item_fix[i] = items[i]
+            item_fix.append(item)
     return item_fix
 
 
