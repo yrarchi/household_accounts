@@ -68,17 +68,21 @@ class OcrReceipt:
         return content_en, content
 
     def get_payment_date(self, content):
-        payment_date = [
+        candidate_of_payment_date = [
             re.search(self.date_regex, s).group()
             for s in content
             if re.search(self.date_regex, s)
         ]
-        try:
-            payment_date = [d for d in payment_date if re.search(r"[^0|^O|^o]", d[0])][
-                -1
-            ]  # 電話番号避け 0から始まる数字列ははねる
-        except IndexError:
-            payment_date = ""
+
+        # 一番日付らしい行を購入日として扱う
+        points = []
+        for value in candidate_of_payment_date:
+            point = value.count("/")
+            point += value.count(":")  # 購入時刻も併記されていることが多い
+            point += value.count("(")  # 購入曜日もかっこ書きで併記されていることが多い
+            points.append(point)
+        payment_date = candidate_of_payment_date[points.index(max(points))]
+
         for before, after in zip(self.conversion_num_before, self.conversion_num_after):
             payment_date = re.sub(before, after, payment_date)
         payment_date = re.sub(r"(年|月|-)", r"/", payment_date)
