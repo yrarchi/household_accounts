@@ -25,10 +25,16 @@ class OcrReceipt:
     top_num_regex = r"^[0-9]{3,}"
     tax_ex_regex = r"外税"
     tax_in_regex = r"(内税|内消費税等)"
-    conversion_num_before = ["O", "U", "b", "Z", "<", "i"]  # 英字として認識されている価格を変換するため
-    conversion_num_after = ["0", "0", "6", "2", "2", "1"]
     separator = r"区切位置"
     discount_regex = r"(割り*引|値引|まとめ買い*)"
+    conversion_to_numeric = {
+        "O": "0",
+        "U": "0",
+        "b": "6",
+        "Z": "2",
+        "<": "2",
+        "i": "1",
+    }
 
     def __init__(self, input_file):
         content_en, content = self.ocr(input_file)
@@ -86,8 +92,9 @@ class OcrReceipt:
         # 曜日と時刻を除外する
         payment_date = re.sub(r"(\(.\).*$|[0-9]{1,2}\:[0-9]{1,2}$)", "", payment_date)
 
-        for before, after in zip(self.conversion_num_before, self.conversion_num_after):
+        for before, after in self.conversion_to_numeric.items():
             payment_date = re.sub(before, after, payment_date)
+
         payment_date = re.sub(r"(年|月|-)", r"/", payment_date)
         payment_date = re.sub(r"[^0-9|^/]", r"", payment_date)
         try:
@@ -147,7 +154,7 @@ class OcrReceipt:
 
     def modify_price(self, price):
         price = [re.sub(r"(\\|:)", r"", s) for s in price]
-        for before, after in zip(self.conversion_num_before, self.conversion_num_after):
+        for before, after in self.conversion_to_numeric.items():
             price = [re.sub(before, after, p) for p in price]
         price = [re.sub(r"[^0-9]", r"", p) for p in price]
         return price
