@@ -83,6 +83,9 @@ class OcrReceipt:
             points.append(point)
         payment_date = candidate_of_payment_date[points.index(max(points))]
 
+        # 曜日と時刻を除外する
+        payment_date = re.sub(r"(\(.\).*$|[0-9]{1,2}\:[0-9]{1,2}$)", "", payment_date)
+
         for before, after in zip(self.conversion_num_before, self.conversion_num_after):
             payment_date = re.sub(before, after, payment_date)
         payment_date = re.sub(r"(年|月|-)", r"/", payment_date)
