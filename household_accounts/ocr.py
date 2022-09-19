@@ -144,7 +144,7 @@ class OcrReceipt:
                 "%Y/%m/%d"
             )
         except ValueError:
-            payment_date = ""
+            pass
         return payment_date
 
     def get_tax_excluded_included(self, content):
