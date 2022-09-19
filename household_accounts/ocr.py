@@ -97,6 +97,48 @@ class OcrReceipt:
 
         payment_date = re.sub(r"(年|月|-)", r"/", payment_date)
         payment_date = re.sub(r"[^0-9|^/]", r"", payment_date)
+
+        # 年月日の区切りがない場合や他の数値が結合している場合にある程度整形する
+        split_payment_date = payment_date.split("/")
+        len_split_payment_date = list(map(len, split_payment_date))
+        if (
+            payment_date.count("/") == 1 and len_split_payment_date[1] <= 2
+        ):  # 年と月が分割できていない場合
+            day = split_payment_date[1]
+            month = split_payment_date[0][-2:]
+            year = split_payment_date[0][-6:-2]
+        if (
+            payment_date.count("/") == 1 and len_split_payment_date[1] > 2
+        ):  # 月と日が分割できていない場合
+            day = split_payment_date[1][-2:]
+            month = split_payment_date[1][:-2]
+            year = split_payment_date[0][-4:]
+        elif (
+            payment_date.count("/") == 0 and sum(len_split_payment_date) >= 8
+        ):  # 年月日が分割できておらず桁数が多い場合
+            day = split_payment_date[0][-2:]
+            month = split_payment_date[0][-4:-2]
+            year = split_payment_date[0][-8:-4]
+        elif (
+            payment_date.count("/") == 0 and sum(len_split_payment_date) < 8
+        ):  # 年月日が分割できておらず桁数が少ない場合
+            day = (
+                split_payment_date[0][-1]
+                if payment_date[-2] > 3
+                else split_payment_date[0][-2:]
+            )
+            month = (
+                split_payment_date[0][-3:-2]
+                if payment_date[-2] > 3
+                else split_payment_date[0][-3]
+            )
+            year = split_payment_date[0][:4]
+        elif payment_date.count("/") == 2:  # # 年月日が分割できている場合
+            day = split_payment_date[2]
+            month = split_payment_date[1]
+            year = split_payment_date[0][-4:]
+        payment_date = "/".join([year, month, day])
+
         try:
             payment_date = datetime.strptime(payment_date, "%Y/%m/%d").strftime(
                 "%Y/%m/%d"
