@@ -38,7 +38,7 @@ class OcrReceipt:
 
     def __init__(self, input_file):
         content_en, content = self.ocr(input_file)
-        self.payment_date = self.get_payment_date(content)
+        self.payment_date, self.payment_date_row = self.get_payment_date(content)
         self.tax_excluded = self.get_tax_excluded_included(content)
         main_contents = self.get_main_contents(content, content_en)
         self.reduced_tax_rate_flg = self.get_reduced_tax_rate_flg(main_contents)
@@ -87,7 +87,9 @@ class OcrReceipt:
             point += value.count(":")  # 購入時刻も併記されていることが多い
             point += value.count("(")  # 購入曜日もかっこ書きで併記されていることが多い
             points.append(point)
-        payment_date = candidate_of_payment_date[points.index(max(points))]
+        payment_date_index = points.index(max(points)) if len(points) > 0 else 0
+        payment_date = candidate_of_payment_date[payment_date_index]
+        payment_date_row = [content.index(s) for s in content if payment_date in s][0]
 
         # 曜日と時刻を除外する
         payment_date = re.sub(r"(\(.\).*$|[0-9]{1,2}\:[0-9]{1,2}$)", "", payment_date)
@@ -99,53 +101,52 @@ class OcrReceipt:
         payment_date = re.sub(r"[^0-9|^/]", r"", payment_date)
 
         # 年月日の区切りがない場合や他の数値が結合している場合にある程度整形する
-        split_payment_date = payment_date.split("/")
-        len_split_payment_date = list(map(len, split_payment_date))
-        if (
-            payment_date.count("/") == 1 and len_split_payment_date[1] <= 2
-        ):  # 年と月が分割できていない場合
-            day = split_payment_date[1]
-            month = split_payment_date[0][-2:]
-            year = split_payment_date[0][-6:-2]
-        if (
-            payment_date.count("/") == 1 and len_split_payment_date[1] > 2
-        ):  # 月と日が分割できていない場合
-            day = split_payment_date[1][-2:]
-            month = split_payment_date[1][:-2]
-            year = split_payment_date[0][-4:]
-        elif (
-            payment_date.count("/") == 0 and sum(len_split_payment_date) >= 8
-        ):  # 年月日が分割できておらず桁数が多い場合
-            day = split_payment_date[0][-2:]
-            month = split_payment_date[0][-4:-2]
-            year = split_payment_date[0][-8:-4]
-        elif (
-            payment_date.count("/") == 0 and sum(len_split_payment_date) < 8
-        ):  # 年月日が分割できておらず桁数が少ない場合
-            day = (
-                split_payment_date[0][-1]
-                if payment_date[-2] > 3
-                else split_payment_date[0][-2:]
-            )
-            month = (
-                split_payment_date[0][-3:-2]
-                if payment_date[-2] > 3
-                else split_payment_date[0][-3]
-            )
-            year = split_payment_date[0][:4]
-        elif payment_date.count("/") == 2:  # # 年月日が分割できている場合
-            day = split_payment_date[2]
-            month = split_payment_date[1]
-            year = split_payment_date[0][-4:]
-        payment_date = "/".join([year, month, day])
-
         try:
+            split_payment_date = payment_date.split("/")
+            len_split_payment_date = list(map(len, split_payment_date))
+            if (
+                payment_date.count("/") == 1 and len_split_payment_date[1] <= 2
+            ):  # 年と月が分割できていない場合
+                day = split_payment_date[1]
+                month = split_payment_date[0][-2:]
+                year = split_payment_date[0][-6:-2]
+            if (
+                payment_date.count("/") == 1 and len_split_payment_date[1] > 2
+            ):  # 月と日が分割できていない場合
+                day = split_payment_date[1][-2:]
+                month = split_payment_date[1][:-2]
+                year = split_payment_date[0][-4:]
+            elif (
+                payment_date.count("/") == 0 and sum(len_split_payment_date) >= 8
+            ):  # 年月日が分割できておらず桁数が多い場合
+                day = split_payment_date[0][-2:]
+                month = split_payment_date[0][-4:-2]
+                year = split_payment_date[0][-8:-4]
+            elif (
+                payment_date.count("/") == 0 and sum(len_split_payment_date) < 8
+            ):  # 年月日が分割できておらず桁数が少ない場合
+                day = (
+                    split_payment_date[0][-1]
+                    if payment_date[-2] > 3
+                    else split_payment_date[0][-2:]
+                )
+                month = (
+                    split_payment_date[0][-3:-2]
+                    if payment_date[-2] > 3
+                    else split_payment_date[0][-3]
+                )
+                year = split_payment_date[0][:4]
+            elif payment_date.count("/") == 2:  # # 年月日が分割できている場合
+                day = split_payment_date[2]
+                month = split_payment_date[1]
+                year = split_payment_date[0][-4:]
+            payment_date = "/".join([year, month, day])
             payment_date = datetime.strptime(payment_date, "%Y/%m/%d").strftime(
                 "%Y/%m/%d"
             )
-        except ValueError:
+        except (ValueError, TypeError):
             pass
-        return payment_date
+        return payment_date, payment_date_row
 
     def get_tax_excluded_included(self, content):
         tax_excluded_flg = [1 for s in content if re.search(self.tax_ex_regex, s)]
@@ -156,14 +157,7 @@ class OcrReceipt:
         return tax_excluded
 
     def get_main_contents(self, content, content_en):
-        try:
-            start_low = [
-                content.index(s) for s in content if re.search(self.date_regex, s)
-            ][
-                -1
-            ] + 1  # payment_dateの次の行が開始行とする
-        except IndexError:
-            start_low = 0  # payment_dateがない場合は最初の行を開始行とする
+        start_low = self.payment_date_row + 1  # payment_dateの次の行が開始行とする
         sum_lows = [content.index(s) for s in content if re.search(self.total_regex, s)]
         end_low = (
             sum_lows[0] if sum_lows != [] else len(content) - 1
@@ -283,7 +277,6 @@ def modify_item_name(items):
     reader = csv_reader("item_ocr_fix")
     ocr_history = [s[0] for s in reader]
     item_history = [s[1] for s in reader]
-
     item_fix = []
     for item in items:
         distances = levenshtein_distances(item, ocr_history)
