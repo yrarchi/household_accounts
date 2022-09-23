@@ -79,11 +79,12 @@ class OcrReceipt:
             for s in content
             if re.search(self.date_regex, s)
         ]
-
         # 一番日付らしい行を購入日として扱う
         points = []
         for value in candidate_of_payment_date:
             point = value.count("/")
+            point += value.count("年")
+            point += value.count("月")
             point += value.count(":")  # 購入時刻も併記されていることが多い
             point += value.count("(")  # 購入曜日もかっこ書きで併記されていることが多い
             points.append(point)
