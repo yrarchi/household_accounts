@@ -10,9 +10,13 @@ from edit_csv import csv_reader
 
 
 class OcrReceipt:
-    date_regex = r"([0-9]|[a-z]|[A-Z]){4} \
-        (/|-|年)([0-9]|[a-z]|[A-Z]){1,2} \
-        (/|-|月)([0-9]|[a-z]|[A-Z]){1,2}"  # 英字は数字が読み取れていない場合用
+    date_regex = (
+        r"(([0-9]|[a-z]|[A-Z]){4,})(/|-|年)*"
+        r"(([0-9]|[a-z]|[A-Z]){1,2})(/|-|月)*"
+        r"(([0-9]|[a-z]|[A-Z]){1,2})日*"
+        r"(\(.+\))*"  # 曜日
+        r"([0-9]{1,2}:[0-9]{1,2})*"  # 時刻
+    )  # 英字は数字が読み取れていない場合用
     total_regex = r"(合計|小計|言十|消費税|対象計|釣り*|預か*り|外税).*[0-9]*"
     item_price_regex = (
         r"([0-9]|[a-z]|[A-Z]).{0,2}\Z"  # 末尾が数字か軽減税率の記号か英字（英字は数字が読み取れていない場合用）
@@ -21,14 +25,20 @@ class OcrReceipt:
     top_num_regex = r"^[0-9]{3,}"
     tax_ex_regex = r"外税"
     tax_in_regex = r"(内税|内消費税等)"
-    conversion_num_before = ["O", "U", "b", "Z", "<", "i"]  # 英字として認識されている価格を変換するため
-    conversion_num_after = ["0", "0", "6", "2", "2", "1"]
     separator = r"区切位置"
     discount_regex = r"(割り*引|値引|まとめ買い*)"
+    conversion_to_numeric = {
+        "O": "0",
+        "U": "0",
+        "b": "6",
+        "Z": "2",
+        "<": "2",
+        "i": "1",
+    }
 
     def __init__(self, input_file):
         content_en, content = self.ocr(input_file)
-        self.payment_date = self.get_payment_date(content)
+        self.payment_date, self.payment_date_row = self.get_payment_date(content)
         self.tax_excluded = self.get_tax_excluded_included(content)
         main_contents = self.get_main_contents(content, content_en)
         self.reduced_tax_rate_flg = self.get_reduced_tax_rate_flg(main_contents)
@@ -64,28 +74,80 @@ class OcrReceipt:
         return content_en, content
 
     def get_payment_date(self, content):
-        payment_date = [
+        candidate_of_payment_date = [
             re.search(self.date_regex, s).group()
             for s in content
             if re.search(self.date_regex, s)
         ]
-        try:
-            payment_date = [d for d in payment_date if re.search(r"[^0|^O|^o]", d[0])][
-                -1
-            ]  # 電話番号避け 0から始まる数字列ははねる
-        except IndexError:
-            payment_date = ""
-        for before, after in zip(self.conversion_num_before, self.conversion_num_after):
+        # 一番日付らしい行を購入日として扱う
+        points = []
+        for value in candidate_of_payment_date:
+            point = value.count("/")
+            point += value.count("年")
+            point += value.count("月")
+            point += value.count(":")  # 購入時刻も併記されていることが多い
+            point += value.count("(")  # 購入曜日もかっこ書きで併記されていることが多い
+            points.append(point)
+        payment_date_index = points.index(max(points)) if len(points) > 0 else 0
+        payment_date = candidate_of_payment_date[payment_date_index]
+        payment_date_row = [content.index(s) for s in content if payment_date in s][0]
+
+        # 曜日と時刻を除外する
+        payment_date = re.sub(r"(\(.\).*$|[0-9]{1,2}\:[0-9]{1,2}$)", "", payment_date)
+
+        for before, after in self.conversion_to_numeric.items():
             payment_date = re.sub(before, after, payment_date)
+
         payment_date = re.sub(r"(年|月|-)", r"/", payment_date)
         payment_date = re.sub(r"[^0-9|^/]", r"", payment_date)
+
+        # 年月日の区切りがない場合や他の数値が結合している場合にある程度整形する
         try:
+            split_payment_date = payment_date.split("/")
+            len_split_payment_date = list(map(len, split_payment_date))
+            if (
+                payment_date.count("/") == 1 and len_split_payment_date[1] <= 2
+            ):  # 年と月が分割できていない場合
+                day = split_payment_date[1]
+                month = split_payment_date[0][-2:]
+                year = split_payment_date[0][-6:-2]
+            if (
+                payment_date.count("/") == 1 and len_split_payment_date[1] > 2
+            ):  # 月と日が分割できていない場合
+                day = split_payment_date[1][-2:]
+                month = split_payment_date[1][:-2]
+                year = split_payment_date[0][-4:]
+            elif (
+                payment_date.count("/") == 0 and sum(len_split_payment_date) >= 8
+            ):  # 年月日が分割できておらず桁数が多い場合
+                day = split_payment_date[0][-2:]
+                month = split_payment_date[0][-4:-2]
+                year = split_payment_date[0][-8:-4]
+            elif (
+                payment_date.count("/") == 0 and sum(len_split_payment_date) < 8
+            ):  # 年月日が分割できておらず桁数が少ない場合
+                day = (
+                    split_payment_date[0][-1]
+                    if payment_date[-2] > 3
+                    else split_payment_date[0][-2:]
+                )
+                month = (
+                    split_payment_date[0][-3:-2]
+                    if payment_date[-2] > 3
+                    else split_payment_date[0][-3]
+                )
+                year = split_payment_date[0][:4]
+            elif payment_date.count("/") == 2:  # # 年月日が分割できている場合
+                day = split_payment_date[2]
+                month = split_payment_date[1]
+                year = split_payment_date[0][-4:]
+            payment_date = "/".join([year, month, day])
             payment_date = datetime.strptime(payment_date, "%Y/%m/%d").strftime(
                 "%Y/%m/%d"
             )
-        except ValueError:
-            payment_date = ""
-        return payment_date
+        except (ValueError, TypeError):
+            pass
+        return payment_date, payment_date_row
 
     def get_tax_excluded_included(self, content):
         tax_excluded_flg = [1 for s in content if re.search(self.tax_ex_regex, s)]
@@ -96,14 +158,7 @@ class OcrReceipt:
         return tax_excluded
 
     def get_main_contents(self, content, content_en):
-        try:
-            start_low = [
-                content.index(s) for s in content if re.search(self.date_regex, s)
-            ][
-                -1
-            ] + 1  # payment_dateの次の行が開始行とする
-        except IndexError:
-            start_low = 0  # payment_dateがない場合は最初の行を開始行とする
+        start_low = self.payment_date_row + 1  # payment_dateの次の行が開始行とする
         sum_lows = [content.index(s) for s in content if re.search(self.total_regex, s)]
         end_low = (
             sum_lows[0] if sum_lows != [] else len(content) - 1
@@ -136,7 +191,7 @@ class OcrReceipt:
 
     def modify_price(self, price):
         price = [re.sub(r"(\\|:)", r"", s) for s in price]
-        for before, after in zip(self.conversion_num_before, self.conversion_num_after):
+        for before, after in self.conversion_to_numeric.items():
             price = [re.sub(before, after, p) for p in price]
         price = [re.sub(r"[^0-9]", r"", p) for p in price]
         return price
@@ -223,7 +278,6 @@ def modify_item_name(items):
     reader = csv_reader("item_ocr_fix")
     ocr_history = [s[0] for s in reader]
     item_history = [s[1] for s in reader]
-
     item_fix = []
     for item in items:
         distances = levenshtein_distances(item, ocr_history)
