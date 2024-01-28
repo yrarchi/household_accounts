@@ -10,8 +10,6 @@ pyocr = "0.8"
 opencv-python = "4.5.1.48"
 
 [tool.poetry.dev-dependencies]
-matplotlib = "3.4.1"
-jupyterlab = "3.2.9"
 black = "^22.3.0"
 flake8 = "^4.0.1"
 
