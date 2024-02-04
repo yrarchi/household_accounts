@@ -3,12 +3,12 @@ on:
   push:
 jobs:
   lint_and_format:
-    runs-on: macos-10.15
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: '3.7.8'
+          python-version: '3.9'
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python -
