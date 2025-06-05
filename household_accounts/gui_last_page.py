@@ -8,7 +8,9 @@ def show_last_page(gui):
     def show_message():
         today = datetime.datetime.now().strftime("%Y%m%d")
         csv_path = "csv/{}.csv".format(today)
-        message = "終了しました。読み取ったデータは{}に保存されています。".format(csv_path)
+        message = "終了しました。読み取ったデータは{}に保存されています。".format(
+            csv_path
+        )
         message_label = tk.Label(gui.next_page, text=message)
         message_label.pack(anchor="center")
 

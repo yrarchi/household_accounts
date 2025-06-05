@@ -22,7 +22,9 @@ def calc_price_tax_in(
         ):
             row = row + 1
             tax = reduced_tax_rate if reduced_tax_rate_flg else tax_rate
-            price_tax_in_list.append(round(price * tax))  # 税込にして端数が出た場合は四捨五入で扱う
+            price_tax_in_list.append(
+                round(price * tax)
+            )  # 税込にして端数が出た場合は四捨五入で扱う
     else:
         price_tax_in_list = price_discount_list
     return price_tax_in_list
