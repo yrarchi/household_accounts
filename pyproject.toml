@@ -8,9 +8,9 @@ authors = ["yrarchi <you@example.com>"]
 python = "^3.11"
 numpy = "^1.23"
 pyocr = "0.8"
-opencv-python = "4.7.x"
+opencv-python = "^4.7.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 black = "^24.3.0"
 flake8 = "^4.0.1"
 
