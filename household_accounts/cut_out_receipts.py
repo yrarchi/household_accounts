@@ -75,7 +75,9 @@ class GetReceiptContours:
         for contour in self.approx_contours:
             if len(contour) == 4:  # 頂点が4点の輪郭のみにする
                 max_abs_cos = get_max_abs_cosine(contour)
-                if max_abs_cos < math.cos(math.radians(80)):  # なす角が80°~100°のみにする
+                if max_abs_cos < math.cos(
+                    math.radians(80)
+                ):  # なす角が80°~100°のみにする
                     rectangle_contours.append(contour)
         return rectangle_contours
 
@@ -154,7 +156,8 @@ def main():
     input_path_list = get_input_path_list(
         relative_path="../img/unprocessed", extension="jpg"
     )
-    input_path = input_path_list[0]  # 現状、読み取り対象の画像は1枚しか対応していないため
+    input_path = input_path_list[0]
+    # 現状、読み取り対象の画像は1枚しか対応していないため
     print("処理中...")
     GetReceiptContours(input_path)
     GetEachReceiptImg(input_path)

@@ -86,7 +86,9 @@ class ReceiptInfoFrame:
         invalid_cmd = self.frame.register(invalid_date)
         date_box = tk.Entry(self.frame)
         date_box.grid(row=1, column=0)
-        date_box.insert(tk.END, payment_date)  # バリデーション前に入力して初期値についてもチェックする
+        date_box.insert(
+            tk.END, payment_date
+        )  # バリデーション前に入力して初期値についてもチェックする
         date_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         date_box["validatecommand"] = (validate_cmd, "%s")  # %s : 入力されている値
         date_box["validate"] = "focus"
@@ -133,7 +135,16 @@ class ImgFrame:
 
 
 class ItemFrame:
-    column_list = ["必要行", "品目", "読み取り価格", "割引", "軽減税率", "税込価格", "大項目", "中項目"]
+    column_list = [
+        "必要行",
+        "品目",
+        "読み取り価格",
+        "割引",
+        "軽減税率",
+        "税込価格",
+        "大項目",
+        "中項目",
+    ]
     item_names = [
         "item",
         "price",
@@ -219,7 +230,10 @@ class ItemFrame:
             places["medium_category"].insert(tk.END, medium_category)
 
         item_validate_cmd = self.frame.register(item_validate)
-        places["item"]["validatecommand"] = (item_validate_cmd, "%P")  # %P : 修正後の入力内容
+        places["item"]["validatecommand"] = (
+            item_validate_cmd,
+            "%P",
+        )  # %P : 修正後の入力内容
         places["item"]["validate"] = "focusout"
 
     def validate_required(self, required_flg, places):
@@ -253,7 +267,10 @@ class ItemFrame:
         price_box.focus_set()  # フォーカスした時にバリデーションが走るため、初期値チェックのためにフォーカスする
         price_validate_cmd = self.frame.register(price_validate)
         price_invalid_cmd = self.frame.register(price_invalid)
-        price_box["validatecommand"] = (price_validate_cmd, "%s")  # %s : 入力されている値
+        price_box["validatecommand"] = (
+            price_validate_cmd,
+            "%s",
+        )  # %s : 入力されている値
         price_box["validate"] = "focus"
         price_box["invalidcommand"] = price_invalid_cmd
 
@@ -389,7 +406,11 @@ class OperationFrame:
             else:
                 show_last_page(self.gui)
 
-        button_text = "次のレシートへ →" if self.receipt_no + 1 < self.num_receipts else "修正完了"
+        button_text = (
+            "次のレシートへ →"
+            if self.receipt_no + 1 < self.num_receipts
+            else "修正完了"
+        )
         change_page_button = tk.Button(self.frame, text=button_text, command=next_step)
         change_page_button.pack(ipadx=100, ipady=15)
 

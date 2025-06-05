@@ -18,9 +18,8 @@ class OcrReceipt:
         r"([0-9]{1,2}:[0-9]{1,2})*"  # 時刻
     )  # 英字は数字が読み取れていない場合用
     total_regex = r"(合計|小計|言十|消費税|対象計|釣り*|預か*り|外税).*[0-9]*"
-    item_price_regex = (
-        r"([0-9]|[a-z]|[A-Z]).{0,2}\Z"  # 末尾が数字か軽減税率の記号か英字（英字は数字が読み取れていない場合用）
-    )
+    item_price_regex = r"([0-9]|[a-z]|[A-Z]).{0,2}\Z"
+    # 末尾が数字か軽減税率の記号か英字（英字は数字が読み取れていない場合用）
     reduced_tax_regex = r"(\*|＊|※|W|w)"
     top_num_regex = r"^[0-9]{3,}"
     tax_ex_regex = r"外税"
@@ -182,7 +181,9 @@ class OcrReceipt:
         item_and_price = [
             re.sub(self.reduced_tax_regex, r"", s) for s in main_contents
         ]  # 軽減税率の記号は取り除く
-        item = [s[: s.find(self.separator)] for s in item_and_price]  # separatorより左が品目名
+        item = [
+            s[: s.find(self.separator)] for s in item_and_price
+        ]  # separatorより左が品目名
         item = [re.sub(self.top_num_regex, r"", s) for s in item]
         price = [
             s[s.find(self.separator) + len(self.separator) :] for s in item_and_price
@@ -212,7 +213,9 @@ class OcrReceipt:
                 discount[i - 1] = (
                     abs(int(self.price[i])) if len(self.price[i]) > 0 else 0
                 )
-            for i in sorted(index_discount, reverse=True):  # indexがずれるので上のforループと分けている
+            for i in sorted(
+                index_discount, reverse=True
+            ):  # indexがずれるので上のforループと分けている
                 del self.price[i]
                 del self.item[i]
                 del self.reduced_tax_rate_flg[i]
@@ -228,8 +231,12 @@ class OcrReceipt:
                     del self.reduced_tax_rate_flg[index]
                     del self.discount[index]
 
-        index_empty_price = [i for i, p in enumerate(self.price) if p == ""]  # 価格がない
-        delete_unnecessary_row(index_empty_price)  # 以下の判定をするために価格がない場合を先に消す
+        index_empty_price = [
+            i for i, p in enumerate(self.price) if p == ""
+        ]  # 価格がない
+        delete_unnecessary_row(
+            index_empty_price
+        )  # 以下の判定をするために価格がない場合を先に消す
         self.price = list(map(int, self.price))
         index_high_price = [
             i for i, price in enumerate(self.price) if price > 1000000

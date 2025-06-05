@@ -43,6 +43,8 @@ class MakeFirstPage:
             )
 
         self.change_pageButton = tk.Button(
-            self.page, text="各レシートの読み取りへ進む → ", command=lambda: first_receipt()
+            self.page,
+            text="各レシートの読み取りへ進む → ",
+            command=lambda: first_receipt(),
         )
         self.change_pageButton.pack(anchor="s", ipadx=100, ipady=15, padx=50)

@@ -5,12 +5,13 @@ description = ""
 authors = ["yrarchi <you@example.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.11"
+numpy = "^1.23"
 pyocr = "0.8"
-opencv-python = "4.5.1.48"
+opencv-python = "^4.7.0"
 
-[tool.poetry.dev-dependencies]
-black = "^22.3.0"
+[tool.poetry.group.dev.dependencies]
+black = "^24.3.0"
 flake8 = "^4.0.1"
 
 [build-system]
